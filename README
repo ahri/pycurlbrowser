@@ -1,0 +1,7 @@
+pycurlbrowser
+
+A minimal browser based on pycurl.
+
+Mechanize seemed a bit slow for my usage, so I wrote this alternative using
+pycurl (i.e. libcurl) and lxml, mostly focused on speed, whilst not compromising
+on the features I see as useful (cookies and form selection/POSTing).
