@@ -117,3 +117,9 @@ class Browser(object):
     def xpath(self, *argv, **kwargs):
         self.parse()
         return self._tree.xpath(*argv, **kwargs)
+
+    def set_follow(self, switch):
+        self._curl.setopt(pycurl.FOLLOWLOCATION, 1 if switch else 0)
+
+    def set_debug(self, switch):
+        self._curl.setopt(pycurl.VERBOSE, 1 if switch else 0)
