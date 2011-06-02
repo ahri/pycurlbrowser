@@ -62,7 +62,12 @@ class Browser(object):
 
     def select_form(self, idx):
         self.parse()
-        self._form = self._tree.forms[idx]
+        try:
+            self._form = self._tree.forms[idx]
+        except TypeError:
+            # perhaps we've been given a name/id
+            self._form = self._tree.forms[filter(lambda f: idx in (f['name'], f['id']),
+                                                 self.forms)[0]['__number']]
 
     def __setitem__(self, *args, **kwargs):
         self._form_data.__setitem__(*args, **kwargs)
@@ -73,13 +78,20 @@ class Browser(object):
     def get_form_fields(self):
         return dict(self._form.form_values())
 
-    def submit(self, submit_num = None):
+    def submit(self, submit_button = None):
         data = self.get_form_fields()
 
         submits = self.submits
-        assert len(submits) == 1 or submit_num is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
-        submit = submits[0 if submit_num is None else submit_num]
-        data[submit['name']] = submit['value'] if 'value' in submit else ''
+        assert len(submits) <= 1 or submit_button is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
+        if len(submits) > 0:
+            try:
+                submit = submits[0 if submit_button is None else submit_button]
+            except TypeError:
+                # perhaps we've been given a name/id
+                submit = submits[filter(lambda b: submit_button in b.values(),
+                                        submits)[0]['__number']]
+
+            data[submit['name']] = submit['value'] if 'value' in submit else ''
 
         if self._form_data:
             data.update(self._form_data)
