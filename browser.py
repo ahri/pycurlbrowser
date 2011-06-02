@@ -119,7 +119,7 @@ class Browser(object):
         self.parse()
         forms = []
         for i, form in enumerate(self._tree.forms):
-            items = {'form_number': i}
+            items = {'__number': i}
             for name, value in form.items():
                 if name in ('name', 'id', 'class'):
                     items[name] = value
@@ -135,7 +135,7 @@ class Browser(object):
 
         submits = []
         for i, submit in enumerate(submit_lst):
-            items = {'submit_number': i}
+            items = {'__number': i}
             for name, value in submit.items():
                 if name in ('name', 'value'):
                     items[name] = value
