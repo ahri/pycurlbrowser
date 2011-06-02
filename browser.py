@@ -122,4 +122,13 @@ class Browser(object):
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1 if switch else 0)
 
     def set_debug(self, switch):
+        def debug(typ, msg):
+            indicators = {pycurl.INFOTYPE_TEXT:       '%',
+                          pycurl.INFOTYPE_HEADER_IN:  '<',
+                          pycurl.INFOTYPE_HEADER_OUT: '>',
+                          pycurl.INFOTYPE_DATA_OUT:   '>>'}
+            if typ in indicators.keys():
+                print "%(ind)s %(msg)s" % {'ind': indicators[typ], 'msg': msg.strip()}
+
         self._curl.setopt(pycurl.VERBOSE, 1 if switch else 0)
+        self._curl.setopt(pycurl.DEBUGFUNCTION, debug)
