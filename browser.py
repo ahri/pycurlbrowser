@@ -14,6 +14,7 @@ class Browser(object):
     def __init__(self):
         self._curl = pycurl.Curl() # note: this is an "easy" connection
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1) # follow location headers
+        self._curl.setopt(pycurl.AUTOREFERER, 1)
         self._curl.setopt(pycurl.MAXREDIRS, 20)
         self._buf = StringIO.StringIO()
         self._curl.setopt(pycurl.WRITEFUNCTION, self._buf.write) # callback for content buffer
@@ -30,8 +31,6 @@ class Browser(object):
     def go(self, url):
         self._buf.truncate(0)
         self._curl.setopt(pycurl.URL, url)
-        if self.url:
-            self._curl.setopt(pycurl.REFERER, self.url)
 
         self._curl.perform()
 
