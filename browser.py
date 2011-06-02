@@ -72,10 +72,13 @@ class Browser(object):
     def get_form_fields(self):
         return dict(self._form.form_values())
 
-    def submit(self):
-        assert self._form is not None, "A form must be selected"
-
+    def submit(self, submit_num = None):
         data = self.get_form_fields()
+
+        submits = self.submits
+        assert len(submits) == 1 or submit_num is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
+        submit = submits[0 if submit_num is None else submit_num]
+        data[submit['name']] = submit['value'] if 'value' in submit else ''
 
         if self._form_data:
             data.update(self._form_data)
@@ -121,6 +124,22 @@ class Browser(object):
                     items[name] = value
             forms.append(items)
         return forms
+
+    @property
+    def submits(self):
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+
+        submit_lst = self._form.xpath("//input[@type='submit']")
+        assert len(submit_lst) > 0, "The selected form must contain a submit button"
+
+        submits = []
+        for i, submit in enumerate(submit_lst):
+            items = {'submit_number': i}
+            for name, value in submit.items():
+                if name in ('name', 'value'):
+                    items[name] = value
+            submits.append(items)
+        return submits
 
     def xpath(self, *argv, **kwargs):
         self.parse()
