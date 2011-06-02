@@ -32,7 +32,16 @@ class Browser(object):
         self._buf.truncate(0)
         self._curl.setopt(pycurl.URL, url)
 
-        self._curl.perform()
+        # execute
+        try:
+            self._curl.perform()
+        except pycurl.error, e:
+            code, message = e.message
+            if code == 60:
+                # SSL cert error; retry
+                self._curl.perform()
+            else:
+                raise e
 
         self.reset()
         return self._curl.getinfo(pycurl.RESPONSE_CODE)
