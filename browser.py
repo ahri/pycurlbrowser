@@ -37,7 +37,7 @@ class Browser(object):
         try:
             self._curl.perform()
         except pycurl.error, e:
-            code, message = e.message
+            code, message = e
             if code == 60:
                 # SSL cert error; retry
                 self._curl.perform()
