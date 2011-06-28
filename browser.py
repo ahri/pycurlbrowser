@@ -5,6 +5,7 @@ import pycurl
 import StringIO
 from lxml.html import fromstring
 from urllib import urlencode
+from datetime import datetime
 
 class Browser(object):
     @classmethod
@@ -28,6 +29,9 @@ class Browser(object):
         self._form = None
         self._curl.setopt(pycurl.POST, 0)
         self._form_data = {}
+        self._roundtrip = None
+
+    roundtrip = property(lambda self: self._roundtrip)
 
     def go(self, url):
         self._buf.truncate(0)
@@ -35,16 +39,19 @@ class Browser(object):
 
         # execute
         try:
+            before = datetime.now()
             self._curl.perform()
         except pycurl.error, e:
             code, message = e
             if code == 60:
                 # SSL cert error; retry
+                before = datetime.now()
                 self._curl.perform()
             else:
                 raise e
 
         self.reset()
+        self._roundtrip = datetime.now() - before
         return self._curl.getinfo(pycurl.RESPONSE_CODE)
 
     def save(self, filename):
