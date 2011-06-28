@@ -124,7 +124,10 @@ class Browser(object):
     @property
     def title(self):
         self.parse()
-        return self._tree.xpath("/html/head/title/text()")[0].strip()
+        try:
+            return self._tree.xpath("/html/head/title/text()")[0].strip()
+        except IndexError:
+            return None
 
     @property
     def forms(self):
