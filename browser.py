@@ -56,13 +56,13 @@ class Browser(object):
 
     def save(self, filename):
         with open(filename, 'w') as fp:
-            fp.write(self._buf.getvalue())
+            fp.write(self.src)
 
     def parse(self):
         if self._tree is not None:
             return
 
-        self._tree = fromstring(self._buf.getvalue())
+        self._tree = fromstring(self.src)
         self._tree.make_links_absolute(self._curl.getinfo(pycurl.EFFECTIVE_URL))
 
     # form selection/submission
@@ -123,6 +123,10 @@ class Browser(object):
         return self.go(url)
 
     # helpers
+
+    @property
+    def src(self):
+        return self._buf.getvalue()
 
     @property
     def url(self):
