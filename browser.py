@@ -27,7 +27,7 @@ class Browser(object):
     def reset(self):
         self._tree = None
         self._form = None
-        self._curl.setopt(pycurl.POST, 0)
+        self._curl.setopt(pycurl.HTTPGET, 1)
         self._form_data = {}
         self._roundtrip = None
 
