@@ -31,7 +31,7 @@ class RestClient(Browser):
         # TODO: care about headers
 
     def post(self, obj, data):
-        self._curl.setopt(pycurl.HTTPPOST, 1)
+        self._curl.setopt(pycurl.POST, 1)
         self._curl.setopt(pycurl.POSTFIELDS, simplejson.loads(data))
         return simplejson.loads(self.src)
 
