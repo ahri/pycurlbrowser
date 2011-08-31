@@ -30,10 +30,10 @@ class RestClient(Browser):
         return self.src
 
     def head(self, obj, uid=None):
+        # TODO: care about headers
         self._curl.setopt(pycurl.HTTPGET, 1)
         self._curl.setopt(pycurl.NOBODY, 1)
         self.go(obj, uid)
-        # TODO: care about headers
 
     def post(self, obj, data=None):
         self._curl.setopt(pycurl.POST, 1)
@@ -44,11 +44,14 @@ class RestClient(Browser):
     def put(self, obj, uid, data=None):
         self._curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
         self._curl.setopt(pycurl.POSTFIELDS, data)
+        self.go(obj, uid)
         return self.src
 
     def delete(self, obj, uid):
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
         # TODO: care about headers
+        self._curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
+        self.go(obj, uid)
+        return self.src
 
 class RestClientJson(RestClient):
     """
@@ -59,9 +62,11 @@ class RestClientJson(RestClient):
         return json.loads(super(RestClientJson, self).get(obj, uid))
 
     def post(self, obj, data=None):
+        self._curl.setopt(pycurl.HTTPHEADER, ['Content-Type: text/json'])
         return json.loads(super(RestClientJson, self).post(obj, json.dumps(data)))
 
     def put(self, obj, uid, data=None):
+        self._curl.setopt(pycurl.HTTPHEADER, ['Content-Type: text/json'])
         return json.loads(super(RestClientJson, self).put(obj, uid, json.dumps(data)))
 
     def delete(self, obj, uid):
