@@ -59,10 +59,10 @@ class RestClientJson(RestClient):
         return json.loads(super(RestClientJson, self).get(obj, uid))
 
     def post(self, obj, data=None):
-        return json.loads(super(RestClientJson, self).post(obj, json_dumps(data)))
+        return json.loads(super(RestClientJson, self).post(obj, json.dumps(data)))
 
     def put(self, obj, uid, data=None):
-        return json.loads(super(RestClientJson, self).put(obj, uid, json_dumps(data)))
+        return json.loads(super(RestClientJson, self).put(obj, uid, json.dumps(data)))
 
     def delete(self, obj, uid):
         return json.loads(super(RestClientJson, self).delete(obj, uid))
