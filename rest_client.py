@@ -63,11 +63,20 @@ class RestClientJson(RestClient):
 
     def post(self, obj, data=None):
         self._curl.setopt(pycurl.HTTPHEADER, ['Content-Type: text/json'])
-        return json.loads(super(RestClientJson, self).post(obj, json.dumps(data)))
+        res = super(RestClientJson, self).post(obj, json.dumps(data))
+        if len(res) > 0:
+            return json.loads(res)
+        return None
 
     def put(self, obj, uid, data=None):
         self._curl.setopt(pycurl.HTTPHEADER, ['Content-Type: text/json'])
-        return json.loads(super(RestClientJson, self).put(obj, uid, json.dumps(data)))
+        res = super(RestClientJson, self).put(obj, uid, json.dumps(data))
+        if len(res) > 0:
+            return json.loads(res)
+        return None
 
     def delete(self, obj, uid):
-        return json.loads(super(RestClientJson, self).delete(obj, uid))
+        res = super(RestClientJson, self).delete(obj, uid)
+        if len(res) > 0:
+            return json.loads(res)
+        return None
