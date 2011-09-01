@@ -25,18 +25,18 @@ class RestClient(Browser):
         return res
 
     def get(self, obj, uid=None):
-        self._curl.setopt(pycurl.HTTPGET, 1)
+        self._curl.setopt(pycurl.CUSTOMREQUEST, 'GET')
         self.go(obj, uid)
         return self.src
 
     def head(self, obj, uid=None):
         # TODO: care about headers
-        self._curl.setopt(pycurl.HTTPGET, 1)
         self._curl.setopt(pycurl.NOBODY, 1)
+        self._curl.setopt(pycurl.CUSTOMREQUEST, 'HEAD')
         self.go(obj, uid)
 
     def post(self, obj, data=None):
-        self._curl.setopt(pycurl.POST, 1)
+        self._curl.setopt(pycurl.CUSTOMREQUEST, 'POST')
         self._curl.setopt(pycurl.POSTFIELDS, data)
         self.go(obj)
         return self.src
