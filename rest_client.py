@@ -21,7 +21,10 @@ class RestClient(Browser):
             url += '/%s' % uid
 
         res = super(RestClient, self).go(url)
-        assert res == 200, "Only handle success, not: %d" % res
+        if res != 200:
+            e = TypeError("Cannot handle HTTP response of type %d" % res)
+            e.res = res
+            raise e
         return res
 
     def get(self, obj, uid=None):
