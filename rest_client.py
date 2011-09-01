@@ -3,6 +3,47 @@ from browser import Browser
 import pycurl
 import simplejson as json
 
+class StatusInformational(Exception):
+    """
+    Represent 1xx status codes
+    """
+
+    pass
+
+class StatusRedirection(Exception):
+    """
+    Represent 3xx status codes
+    """
+
+    pass
+
+class StatusClientError(Exception):
+    """
+    Represent 4xx status codes
+    """
+
+    pass
+
+class StatusServerError(Exception):
+    """
+    Represent 5xx status codes
+    """
+
+    pass
+
+def status_factory(status):
+    if 100 <= status < 200:
+        return StatusInformational()
+    elif 300 <= status < 400:
+        return StatusRedirection()
+    elif 400 <= status < 500:
+        return StatusClientError()
+    elif 500 <= status < 600:
+        return StatusServerError()
+
+    raise ValueError("I only deal with HTTP statuses in ranges I understand, and not success")
+
+
 class RestClient(Browser):
 
     """
@@ -22,9 +63,7 @@ class RestClient(Browser):
 
         res = super(RestClient, self).go(url)
         if res != 200:
-            e = TypeError("Cannot handle HTTP response of type %d" % res)
-            e.res = res
-            raise e
+            raise status_factory(res)
         return res
 
     def get(self, obj, uid=None):
