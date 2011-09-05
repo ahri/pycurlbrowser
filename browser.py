@@ -87,7 +87,7 @@ class Browser(object):
         self._form_data.update(kwargs)
 
     def get_form_fields(self):
-        return dict(self._form.form_values())
+        return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
 
     def submit(self, submit_button = None):
         data = self.get_form_fields()
