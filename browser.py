@@ -83,7 +83,7 @@ class Browser(object):
     def __setitem__(self, *args, **kwargs):
         self._form_data.__setitem__(*args, **kwargs)
 
-    def set_data(self, **kwargs):
+    def set_form_data(self, **kwargs):
         self._form_data.update(kwargs)
 
     def get_form_fields(self):
