@@ -75,7 +75,9 @@ class Browser(object):
             self._form = self._tree.forms[idx]
         except TypeError:
             # perhaps we've been given a name/id
-            self._form = self._tree.forms[filter(lambda f: idx in (f['name'], f['id']),
+            if idx is None:
+                raise
+            self._form = self._tree.forms[filter(lambda f: idx in (f.get('name'), f.get('id')),
                                                  self.forms)[0]['__number']]
 
     def __setitem__(self, *args, **kwargs):
