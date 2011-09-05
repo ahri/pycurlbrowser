@@ -22,6 +22,8 @@ class Browser(object):
         self._curl.setopt(pycurl.WRITEFUNCTION, self._buf.write) # callback for content buffer
         self._curl.setopt(pycurl.USERAGENT, "Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.24 (KHTML, like Gecko) Ubuntu/10.10 Chromium/11.0.696.65 Chrome/11.0.696.65 Safari/534.24")
         self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
+        self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
+        self._curl.setopt(pycurl.TIMEOUT, 4);
         self.reset()
 
     def reset(self):
