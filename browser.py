@@ -13,6 +13,7 @@ class Browser(object):
         return item in pycurl.version_info()[8]
 
     def __init__(self):
+        self.retries = 0
         self._curl = pycurl.Curl() # note: this is an "easy" connection
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1) # follow location headers
         self._curl.setopt(pycurl.AUTOREFERER, 1)
@@ -39,18 +40,20 @@ class Browser(object):
         self._buf.truncate(0)
         self._curl.setopt(pycurl.URL, url)
 
-        # execute
-        try:
-            before = datetime.now()
-            self._curl.perform()
-        except pycurl.error, e:
-            code, message = e
-            if code == 60:
-                # SSL cert error; retry
-                before = datetime.now()
+        before = datetime.now()
+        retries = self.retries
+        exception = True
+
+        while retries >= 0 and exception is not None:
+            retries -= 1
+            try:
                 self._curl.perform()
-            else:
-                raise e
+                exception = None
+            except pycurl.error, e:
+                exception = e
+
+        if exception is not None:
+            raise exception
 
         self.reset()
         self._roundtrip = datetime.now() - before
