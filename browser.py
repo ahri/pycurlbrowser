@@ -89,7 +89,7 @@ class Browser(object):
     def get_form_fields(self):
         return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
 
-    def submit(self, submit_button = None):
+    def submit(self, submit_button=None):
         data = self.get_form_fields()
 
         submits = self.submits
