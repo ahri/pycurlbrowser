@@ -177,7 +177,7 @@ class Browser(object):
         else:
             xpath = '//a[text()="%s"]' % name_or_xpath
         link = self.xpath(xpath)[0]
-        self.go(link.get('href'))
+        return self.go(link.get('href'))
 
     # helpers
 
