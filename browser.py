@@ -104,10 +104,8 @@ class Browser(object):
         for d in self.form_dropdowns:
             self.form_fill_dropdown(d)
 
-    def __setitem__(self, *args, **kwargs):
-        self._form_data.__setitem__(*args, **kwargs)
-
     def form_update_data(self, **kwargs):
+        assert self._form is not None, "A form must be selected: %s" % self.forms
         self._form_data.update(kwargs)
 
     def form_fill_dropdown(self, select_name, option_title=None):
