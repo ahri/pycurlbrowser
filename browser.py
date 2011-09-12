@@ -23,7 +23,7 @@ class Browser(object):
     def __init__(self, url=None):
         self.retries = 0
         self._curl = pycurl.Curl() # note: this is an "easy" connection
-        self._curl.setopt(pycurl.FOLLOWLOCATION, 1) # follow location headers
+        self.set_follow(True) # follow location headers
         self._curl.setopt(pycurl.AUTOREFERER, 1)
         self._curl.setopt(pycurl.MAXREDIRS, 20)
         self._curl.setopt(pycurl.ENCODING, "gzip")
