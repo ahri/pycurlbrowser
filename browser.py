@@ -109,20 +109,28 @@ class Browser(object):
         assert self._form is not None, "A form must be selected: %s" % self.forms
         self._form_data.update(kwargs)
 
+    def _form_dropdown_options_raw(self, select_name):
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+        return self._form.xpath('.//select[@name="%s"]//option' % select_name)
+
+    def form_dropdown_options(self, select_name):
+        """List options for the given dropdown"""
+        return dict(map(lambda o: (o.text, o.get('value')), self._form_dropdown_options_raw(select_name)))
+
     def form_fill_dropdown(self, select_name, option_title=None):
         """Fill the value for a dropdown"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
 
-        nodes = self._form.xpath('.//select[@name="%s"]//option' % select_name)[0].xpath('.//option')
+        nodes = self._form_dropdown_options_raw(select_name)
         if option_title is None:
             node = nodes[0]
-        else
+        else:
             node = filter(lambda o: o.text == option_title, nodes)[0]
 
         self.form_update_data(**{select_name:node.get('value')})
 
-    def submit(self, submit_button=None):
+    def form_submit(self, submit_button=None):
         """Submit the currently selected form with the given (or the first) submit button"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
 
         submits = self.form_submits
         assert len(submits) <= 1 or submit_button is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
@@ -139,14 +147,16 @@ class Browser(object):
         if self._form_data:
             data.update(self._form_data)
 
-        return self.submit_data(self._form.method, self._form.action, data)
+        return self.form_submit_data(self._form.method, self._form.action, data)
 
-    def submit_no_button(self):
+    def form_submit_no_button(self):
         """Submit the currently selected form, but don't use a button to do it"""
-        return self.submit_data(self._form.method, self._form.action, self._form_data)
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+        return self.form_submit_data(self._form.method, self._form.action, self._form_data)
 
-    def submit_data(self, method, action, data):
+    def form_submit_data(self, method, action, data):
         """Submit data, intelligently, to the given action URL"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
         data = urlencode(data)
 
         if method.upper() == 'POST':
@@ -200,10 +210,16 @@ class Browser(object):
         return forms
 
     @property
+    def form_dropdowns_nodes(self):
+        """Names of dropdowns for selected form"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+        return self._form.xpath('.//select')
+
+    @property
     def form_dropdowns(self):
         """Names of dropdowns for selected form"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
-        return map(lambda s: s.get('name'), self._form.xpath('.//select'))
+        return map(lambda s: s.get('name'), self.form_dropdowns_nodes)
 
     @property
     def form_fields(self):
