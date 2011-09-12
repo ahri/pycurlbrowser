@@ -149,12 +149,9 @@ class Browser(object):
                 submit = submits[filter(lambda b: submit_button in b.values(),
                                         submits)[0]['__number']]
 
-            data[submit['name']] = submit['value'] if 'value' in submit else ''
+            self.form_data_update(**{submit['name']: submit['value'] if 'value' in submit else ''})
 
-        if self._form_data:
-            data.update(self._form_data)
-
-        return self.form_submit_data(self._form.method, self._form.action, data)
+        return self.form_submit_data(self._form.method, self._form.action, self._form_data)
 
     def form_submit_no_button(self):
         """Submit the currently selected form, but don't use a button to do it"""
