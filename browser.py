@@ -100,12 +100,27 @@ class Browser(object):
             self._form = self._tree.forms[filter(lambda f: idx in (f.get('name'), f.get('id')),
                                                  self.forms)[0]['__number']]
 
+        # set the default values for all dropdowns in this form
+        for d in self.form_dropdowns:
+            self.form_fill_dropdown(d)
+
     def __setitem__(self, *args, **kwargs):
         self._form_data.__setitem__(*args, **kwargs)
 
     def form_update_data(self, **kwargs):
         self._form_data.update(kwargs)
 
+    def form_fill_dropdown(self, select_name, option_title=None):
+        """Fill the value for a dropdown"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+
+        nodes = self._form.xpath('.//select[@name="%s"]//option' % select_name)[0].xpath('.//option')
+        if option_title is None:
+            node = nodes[0]
+        else
+            node = filter(lambda o: o.text == option_title, nodes)[0]
+
+        self.form_update_data(**{select_name:node.get('value')})
 
     def submit(self, submit_button=None):
         """Submit the currently selected form with the given (or the first) submit button"""
