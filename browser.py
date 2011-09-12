@@ -202,7 +202,7 @@ class Browser(object):
         """Dict of submits for selected form"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
 
-        submit_lst = self._form.xpath("//input[@type='submit']")
+        submit_lst = self._form.xpath(".//input[@type='submit']")
         assert len(submit_lst) > 0, "The selected form must contain a submit button"
 
         submits = []
