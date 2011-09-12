@@ -8,6 +8,14 @@ from urllib import urlencode
 from datetime import datetime
 
 class Browser(object):
+
+    """
+    Emulate a normal browser
+
+    This class is a convenience on top of libcurl and lxml; it should behave
+    like a normal browser (but lacking Javascript), and allow DOM queries.
+    """
+
     @classmethod
     def check_curl(cls, item):
         return item in pycurl.version_info()[8]
@@ -28,6 +36,7 @@ class Browser(object):
         self.reset()
 
     def reset(self):
+        """Clear out the browser state"""
         self._tree = None
         self._form = None
         self._curl.setopt(pycurl.HTTPGET, 1)
@@ -37,6 +46,7 @@ class Browser(object):
     roundtrip = property(lambda self: self._roundtrip)
 
     def go(self, url):
+        """Go to a url"""
         self._buf.truncate(0)
         self._curl.setopt(pycurl.URL, url)
 
@@ -60,10 +70,12 @@ class Browser(object):
         return self._curl.getinfo(pycurl.RESPONSE_CODE)
 
     def save(self, filename):
+        """Save the current page"""
         with open(filename, 'w') as fp:
             fp.write(self.src)
 
     def parse(self):
+        """Parse the current page into a node tree"""
         if self._tree is not None:
             return
 
@@ -73,6 +85,7 @@ class Browser(object):
     # form selection/submission
 
     def select_form(self, idx):
+        """Select a form on the current page"""
         self.parse()
         try:
             self._form = self._tree.forms[idx]
@@ -93,6 +106,7 @@ class Browser(object):
         return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
 
     def submit(self, submit_button=None):
+        """Submit the currently selected form with the given (or the first) submit button"""
         data = self.get_form_fields()
 
         submits = self.submits
@@ -113,9 +127,11 @@ class Browser(object):
         return self.submit_data(self._form.method, self._form.action, data)
 
     def submit_no_button(self):
+        """Submit the currently selected form, but don't use a button to do it"""
         return self.submit_data(self._form.method, self._form.action, self._form_data)
 
     def submit_data(self, method, action, data):
+        """Submit data, intelligently, to the given action URL"""
         data = urlencode(data)
 
         if method.upper() == 'POST':
@@ -130,6 +146,7 @@ class Browser(object):
                                                        'data'   : data})
 
     def follow_link(self, name_or_xpath):
+        """Emulate clicking a link"""
         if name_or_xpath[0] == '/':
             xpath = name_or_xpath
         else:
@@ -184,10 +201,12 @@ class Browser(object):
         return submits
 
     def xpath(self, *argv, **kwargs):
+        """Execute an XPATH against the current node tree"""
         self.parse()
         return self._tree.xpath(*argv, **kwargs)
 
     def set_follow(self, switch):
+        """Indicate whether the browser should automatically follow redirect headers"""
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1 if switch else 0)
 
     def set_debug(self, switch):
