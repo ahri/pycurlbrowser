@@ -90,6 +90,7 @@ class Browser(object):
     def form_select(self, idx):
         """Select a form on the current page"""
         self.parse()
+        self._form_data = {}
         try:
             self._form = self._tree.forms[idx]
         except TypeError:
