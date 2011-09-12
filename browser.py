@@ -20,7 +20,7 @@ class Browser(object):
     def check_curl(cls, item):
         return item in pycurl.version_info()[8]
 
-    def __init__(self):
+    def __init__(self, url=None):
         self.retries = 0
         self._curl = pycurl.Curl() # note: this is an "easy" connection
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1) # follow location headers
@@ -34,6 +34,9 @@ class Browser(object):
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
         self._curl.setopt(pycurl.TIMEOUT, 4);
         self.reset()
+
+        if url is not None:
+            self.go(url)
 
     def reset(self):
         """Clear out the browser state"""
