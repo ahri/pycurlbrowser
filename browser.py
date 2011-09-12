@@ -90,7 +90,6 @@ class Browser(object):
     def form_select(self, idx):
         """Select a form on the current page"""
         self.parse()
-        self._form_data = {}
         try:
             self._form = self._tree.forms[idx]
         except TypeError:
@@ -99,6 +98,8 @@ class Browser(object):
                 raise
             self._form = self._tree.forms[filter(lambda f: idx in (f.get('name'), f.get('id')),
                                                  self.forms)[0]['__number']]
+
+        self._form_data = dict(self.form_fields)
 
         # set the default values for all dropdowns in this form
         for d in self.form_dropdowns:
@@ -122,7 +123,6 @@ class Browser(object):
 
     def submit(self, submit_button=None):
         """Submit the currently selected form with the given (or the first) submit button"""
-        data = self.form_fields
 
         submits = self.form_submits
         assert len(submits) <= 1 or submit_button is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
