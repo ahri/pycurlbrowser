@@ -87,7 +87,7 @@ class Browser(object):
 
     # form selection/submission
 
-    def select_form(self, idx):
+    def form_select(self, idx):
         """Select a form on the current page"""
         self.parse()
         try:
@@ -102,17 +102,15 @@ class Browser(object):
     def __setitem__(self, *args, **kwargs):
         self._form_data.__setitem__(*args, **kwargs)
 
-    def set_form_data(self, **kwargs):
+    def form_update_data(self, **kwargs):
         self._form_data.update(kwargs)
 
-    def get_form_fields(self):
-        return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
 
     def submit(self, submit_button=None):
         """Submit the currently selected form with the given (or the first) submit button"""
-        data = self.get_form_fields()
+        data = self.form_fields
 
-        submits = self.submits
+        submits = self.form_submits
         assert len(submits) <= 1 or submit_button is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
         if len(submits) > 0:
             try:
@@ -188,7 +186,20 @@ class Browser(object):
         return forms
 
     @property
-    def submits(self):
+    def form_dropdowns(self):
+        """Names of dropdowns for selected form"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+        return map(lambda s: s.get('name'), self._form.xpath('.//select'))
+
+    @property
+    def form_fields(self):
+        """Dict of fields and values for selected form"""
+        assert self._form is not None, "A form must be selected: %s" % self.forms
+        return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
+
+    @property
+    def form_submits(self):
+        """Dict of submits for selected form"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
 
         submit_lst = self._form.xpath("//input[@type='submit']")
