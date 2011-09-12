@@ -110,24 +110,24 @@ class Browser(object):
         if self._form_data:
             data.update(self._form_data)
 
+        return self.submit_data(self._form.method, self._form.action, data)
+
+    def submit_no_button(self):
+        return self.submit_data(self._form.method, self._form.action, self._form_data)
+
+    def submit_data(self, method, action, data):
         data = urlencode(data)
 
-        if self._form.method.upper() == 'POST':
+        if method.upper() == 'POST':
             self._curl.setopt(pycurl.POST, 1)
             self._curl.setopt(pycurl.POSTFIELDS, data)
 
             return self.go(self._form.action)
 
-        sep = '?' if self._form.action.find('?') == -1 else '&'
-        return self.go("%(current)s%(sep)s%(data)s" % {'current': self._form.action,
+        sep = '?' if action.find('?') == -1 else '&'
+        return self.go("%(current)s%(sep)s%(data)s" % {'current': action,
                                                        'sep'    : sep,
                                                        'data'   : data})
-
-    def post(self, url, data):
-        data = urlencode(data)
-        self._curl.setopt(pycurl.POST, 1)
-        self._curl.setopt(pycurl.POSTFIELDS, data)
-        return self.go(url)
 
     def follow_link(self, name_or_xpath):
         if name_or_xpath[0] == '/':
