@@ -1,12 +1,31 @@
-pycurlbrowser
+browser.Browser
 
-A minimal browser based on pycurl.
+    A minimal browser based on pycurl/lxml.
 
-Mechanize seemed a bit slow for my usage, so I wrote this alternative using
-pycurl (i.e. libcurl) and lxml, mostly focused on speed, whilst not compromising
-on the features I see as useful (cookies and form selection/POSTing).
+    Mechanize seemed a bit slow for my usage, so I wrote this alternative using
+    pycurl (i.e. libcurl) and lxml, mostly focused on speed, whilst not
+    compromising on the features I see as useful (cookies and form selection/
+    POSTing).
 
-Plans:
-    form support for radio, checkbox types
-    decorator to catch errors and rethrow with attached browser data for easier
-        scraper debugging
+    Plans:
+        form support for radio, checkbox types
+        decorator to catch errors and rethrow with attached browser data for
+            easier scraper debugging
+
+rest_client.RestClient
+
+    A simple REST client based upon pycurlbrowser.
+
+    CRUD approach providing:
+        create
+        read
+        update
+        destroy
+
+rest_client.RestClientJson
+
+    A REST client that only speaks JSON.
+
+    Building upon RestClient to convert to/from JSON for a more streamlined
+    experience taking in and returning Python primitives, using JSON as a
+    transport protocol.
