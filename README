@@ -5,3 +5,8 @@ A minimal browser based on pycurl.
 Mechanize seemed a bit slow for my usage, so I wrote this alternative using
 pycurl (i.e. libcurl) and lxml, mostly focused on speed, whilst not compromising
 on the features I see as useful (cookies and form selection/POSTing).
+
+Plans:
+    form support for radio, checkbox types
+    decorator to catch errors and rethrow with attached browser data for easier
+        scraper debugging
