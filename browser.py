@@ -77,6 +77,13 @@ class Browser(object):
         with open(filename, 'w') as fp:
             fp.write(self.src)
 
+    def save_pretty(self, filename):
+        """Save the current page, after lxml has prettified it"""
+        self.parse()
+        from lxml.builder import ET
+        with open(filename, 'w') as fp:
+            fp.write(ET.tostring(self._tree, pretty_print=True))
+
     def parse(self):
         """Parse the current page into a node tree"""
         if self._tree is not None:
