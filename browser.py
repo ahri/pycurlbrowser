@@ -112,7 +112,7 @@ class Browser(object):
         for d in self.form_dropdowns:
             self.form_fill_dropdown(d)
 
-    def form_update_data(self, **kwargs):
+    def form_data_update(self, **kwargs):
         assert self._form is not None, "A form must be selected: %s" % self.forms
         self._form_data.update(kwargs)
 
@@ -133,7 +133,7 @@ class Browser(object):
         else:
             node = filter(lambda o: o.text == option_title, nodes)[0]
 
-        self.form_update_data(**{select_name:node.get('value')})
+        self.form_data_update(**{select_name:node.get('value')})
 
     def form_submit(self, submit_button=None):
         """Submit the currently selected form with the given (or the first) submit button"""
