@@ -103,8 +103,8 @@ class Browser(object):
             # perhaps we've been given a name/id
             if idx is None:
                 raise
-            self._form = self._tree.forms[filter(lambda f: idx in (f.get('name'), f.get('id')),
-                                                 self.forms)[0]['__number']]
+            self._form = self._tree.forms[[f for f in self.forms
+                                           if idx in (f.get('name'), f.get('id'))][0]['__number']]
 
         self._form_data = dict(self.form_fields)
 
@@ -122,7 +122,7 @@ class Browser(object):
 
     def form_dropdown_options(self, select_name):
         """List options for the given dropdown"""
-        return dict(map(lambda o: (o.text, o.get('value')), self._form_dropdown_options_raw(select_name)))
+        return dict(((o.text, o.get('value')) for o in self._form_dropdown_options_raw(select_name)))
 
     def form_fill_dropdown(self, select_name, option_title=None):
         """Fill the value for a dropdown"""
@@ -131,7 +131,7 @@ class Browser(object):
         if option_title is None:
             node = nodes[0]
         else:
-            node = filter(lambda o: o.text == option_title, nodes)[0]
+            node = [n for n in nodes if n.text == option_title][0]
 
         self.form_data_update(**{select_name:node.get('value')})
 
@@ -146,8 +146,7 @@ class Browser(object):
                 submit = submits[0 if submit_button is None else submit_button]
             except TypeError:
                 # perhaps we've been given a name/id
-                submit = submits[filter(lambda b: submit_button in b.values(),
-                                        submits)[0]['__number']]
+                submit = submits[[s for s in submits if submit_button in s.values()][0]['__number']]
 
             self.form_data_update(**{submit['name']: submit['value'] if 'value' in submit else ''})
 
@@ -223,13 +222,13 @@ class Browser(object):
     def form_dropdowns(self):
         """Names of dropdowns for selected form"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
-        return map(lambda s: s.get('name'), self.form_dropdowns_nodes)
+        return (s.get('name') for s in self.form_dropdowns_nodes)
 
     @property
     def form_fields(self):
         """Dict of fields and values for selected form"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
-        return dict(filter(lambda pair: pair[0] != '', self._form.fields.items()))
+        return dict((pair for pair in self._form.fields.items() if pair[0] != ''))
 
     @property
     def form_submits(self):
