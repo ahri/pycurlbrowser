@@ -148,7 +148,8 @@ class Browser(object):
                 # perhaps we've been given a name/id
                 submit = submits[[s for s in submits if submit_button in s.values()][0]['__number']]
 
-            self.form_data_update(**{submit['name']: submit['value'] if 'value' in submit else ''})
+            if 'name' in submit:
+                self.form_data_update(**{submit['name']: submit['value'] if 'value' in submit else ''})
 
         return self.form_submit_data(self._form.method, self._form.action, self._form_data)
 
