@@ -2,3 +2,9 @@
 *.pyc
 MANIFEST
 dist/
+bin/
+build/
+include/
+lib/
+lib64
+share/
