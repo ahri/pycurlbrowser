@@ -1,23 +1,15 @@
 #!/usr/bin/env python
 from distutils.core import setup
 
-PACKAGE = "pycurlbrowser"
-NAME = "pycurlbrowser"
-DESCRIPTION = "A minimal browser based on pycurl/lxml"
-AUTHOR = "Adam Piper"
-AUTHOR_EMAIL = "adam@ahri.net"
-URL = "https://github.com/ahri/pycurlbrowser"
-VERSION = __import__(PACKAGE).__version__
-
 setup(
-    name=NAME,
-    version=VERSION,
-    description=DESCRIPTION,
+    name="pycurlbrowser",
+    version='0.1.1',
+    description="A minimal browser based on pycurl/lxml",
     long_description=open("README").read(),
-    author=AUTHOR,
-    author_email=AUTHOR_EMAIL,
-    license="AGPLv2",
-    url=URL,
+    author="Adam Piper",
+    author_email="adam@ahri.net",
+    license="AGPLv3",
+    url="https://github.com/ahri/pycurlbrowser",
     packages=["pycurlbrowser"],
     platforms='any',
     install_requires=[
