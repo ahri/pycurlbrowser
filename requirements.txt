@@ -1,4 +1,7 @@
+Pygments==1.4
+bpython==0.10.1
 lxml==2.3.2
+nose==1.1.2
 pycurl==7.19.0
 simplejson==2.2.1
 wsgiref==0.1.2
