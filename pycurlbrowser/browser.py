@@ -5,7 +5,20 @@ import pycurl
 import StringIO
 from lxml.html import fromstring
 from urllib import urlencode
-from datetime import datetime
+from datetime import datetime, timedelta
+
+class CannedResponse(object):
+
+    """
+    A fictional response predominantly for testing purposes
+    """
+
+    def __init__(self):
+        """Set up some defaults"""
+        self.code = 200
+        self.exception = None
+        self.roundtrip = timedelta()
+        self.src = ''
 
 class Browser(object):
 
@@ -33,6 +46,7 @@ class Browser(object):
         self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
         self._curl.setopt(pycurl.TIMEOUT, 4);
+        self.canned_response = dict()
         self.reset()
 
         if url is not None:
@@ -51,6 +65,17 @@ class Browser(object):
     def go(self, url):
         """Go to a url"""
         self._buf.truncate(0)
+
+        if url in self.canned_response:
+            can = self.canned_response[url]
+            if can.exception is not None:
+                raise can.exception
+
+            self._buf.write(can.src)
+            self.reset()
+            self._roundtrip = can.roundtrip
+            return can.code
+
         self._curl.setopt(pycurl.URL, url)
 
         before = datetime.now()
