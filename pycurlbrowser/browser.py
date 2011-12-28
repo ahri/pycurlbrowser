@@ -1,11 +1,27 @@
 # Copyright (C) Adam Piper, 2012
 # See COPYING for licence details (GNU AGPLv3)
 
+"""
+A python web browser for scraping purposes.
+Includes canned responses for testing.
+"""
+
 import pycurl
 import StringIO
 from lxml.html import fromstring
 from urllib import urlencode
 from datetime import datetime, timedelta
+
+def check_curl(item):
+    """Convenience method to check whether curl supports a given feature"""
+    return item in pycurl.version_info()[8]
+
+def escape_data(data, escaped):
+    """Escape data if neccessary"""
+    if data is not None and not escaped:
+        data = urlencode(data)
+
+    return data
 
 class CannedResponse(object):
 
@@ -29,10 +45,6 @@ class Browser(object):
     like a normal browser (but lacking Javascript), and allow DOM queries.
     """
 
-    @classmethod
-    def check_curl(cls, item):
-        return item in pycurl.version_info()[8]
-
     def __init__(self, url=None):
         self.retries = 0
         self._curl = pycurl.Curl() # note: this is an "easy" connection
@@ -41,8 +53,13 @@ class Browser(object):
         self._curl.setopt(pycurl.MAXREDIRS, 20)
         self._curl.setopt(pycurl.ENCODING, "gzip")
         self._buf = StringIO.StringIO()
-        self._curl.setopt(pycurl.WRITEFUNCTION, self._buf.write) # callback for content buffer
-        self._curl.setopt(pycurl.USERAGENT, "Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.24 (KHTML, like Gecko) Ubuntu/10.10 Chromium/11.0.696.65 Chrome/11.0.696.65 Safari/534.24")
+        self._curl.setopt(pycurl.WRITEFUNCTION,
+                          self._buf.write) # callback for content buffer
+        self._curl.setopt(pycurl.USERAGENT,
+                          "Mozilla/5.0 (X11; Linux i686) " +\
+                          "AppleWebKit/534.24 (KHTML, like Gecko) " +\
+                          "Ubuntu/10.10 Chromium/11.0.696.65 " +\
+                          "Chrome/11.0.696.65 Safari/534.24")
         self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
         self._curl.setopt(pycurl.TIMEOUT, 4)
@@ -61,21 +78,16 @@ class Browser(object):
 
     roundtrip = property(lambda self: self._roundtrip)
 
-    def _escape_data(self, data, escaped):
-        if data is not None and not escaped:
-            data = urlencode(data)
-
-        return data
-
-    def add_canned_response(self, can, url, method='GET', data=None, escaped=False):
+    def add_canned_response(self, can, url, method='GET',
+                                  data=None, escaped=False):
         """Add canned responses, for testing purposes"""
-        data = self._escape_data(data, escaped)
+        data = escape_data(data, escaped)
 
         self._canned_response[url, method, data] = can
 
     def _setup_data(self, url, method, data, escaped):
         """Escape the data and configure curl based upon the method"""
-        data = self._escape_data(data, escaped)
+        data = escape_data(data, escaped)
 
         self._curl.setopt(pycurl.CUSTOMREQUEST, method)
         if data is not None:
@@ -102,15 +114,15 @@ class Browser(object):
 
         before = datetime.now()
         retries = self.retries
-        exception = True
+        exception = Exception("Dummy exception")
 
         while retries >= 0 and exception is not None:
             retries -= 1
             try:
                 self._curl.perform()
                 exception = None
-            except pycurl.error, e:
-                exception = e
+            except pycurl.error, ex:
+                exception = ex
 
         if exception is not None:
             raise exception
@@ -170,7 +182,9 @@ class Browser(object):
             if idx is None:
                 raise
             self._form = self._tree.forms[[f for f in self.forms
-                                           if idx in (f.get('name'), f.get('id'))][0]['__number']]
+                                           if idx in
+                                              (f.get('name'),
+                                               f.get('id'))][0]['__number']]
 
         self._form_data = dict(self.form_fields)
 
@@ -179,16 +193,21 @@ class Browser(object):
             self.form_fill_dropdown(d)
 
     def form_data_update(self, **kwargs):
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        """Check that a form is selected, and update the state"""
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
         self._form_data.update(kwargs)
 
     def _form_dropdown_options_raw(self, select_name):
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        """Get the options for a dropdown"""
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
         return self._form.xpath('.//select[@name="%s"]//option' % select_name)
 
     def form_dropdown_options(self, select_name):
         """List options for the given dropdown"""
-        return dict(((o.text, o.get('value')) for o in self._form_dropdown_options_raw(select_name)))
+        return dict(((o.text, o.get('value')) for o in
+                    self._form_dropdown_options_raw(select_name)))
 
     def form_fill_dropdown(self, select_name, option_title=None):
         """Fill the value for a dropdown"""
@@ -202,31 +221,49 @@ class Browser(object):
         self.form_data_update(**{select_name:node.get('value')})
 
     def form_submit(self, submit_button=None):
-        """Submit the currently selected form with the given (or the first) submit button"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        """
+        Submit the currently selected form with the given (or the first)
+        submit button.
+        """
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
 
         submits = self.form_submits
-        assert len(submits) <= 1 or submit_button is not None, "Implicit submit is not possible; an explicit choice must be passed: %s" % submits
+        assert len(submits) <= 1 or submit_button is not None, \
+                               "Implicit submit is not possible; " + \
+                               "an explicit choice must be passed: %s" % submits
         if len(submits) > 0:
             try:
                 submit = submits[0 if submit_button is None else submit_button]
             except TypeError:
                 # perhaps we've been given a name/id
-                submit = submits[[s for s in submits if submit_button in s.values()][0]['__number']]
+                submit = submits[[s for s in submits
+                                  if submit_button in
+                                      s.values()][0]['__number']]
 
             if 'name' in submit:
-                self.form_data_update(**{submit['name']: submit['value'] if 'value' in submit else ''})
+                self.form_data_update(**{submit['name']: submit['value']
+                                                         if 'value' in submit
+                                                         else ''})
 
-        return self.form_submit_data(self._form.method, self._form.action, self._form_data)
+        return self.form_submit_data(self._form.method,
+                                     self._form.action,
+                                     self._form_data)
 
     def form_submit_no_button(self):
-        """Submit the currently selected form, but don't use a button to do it"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
-        return self.form_submit_data(self._form.method, self._form.action, self._form_data)
+        """
+        Submit the currently selected form, but don't use a button to do it.
+        """
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
+        return self.form_submit_data(self._form.method,
+                                     self._form.action,
+                                     self._form_data)
 
     def form_submit_data(self, method, action, data):
         """Submit data, intelligently, to the given action URL"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
         return self.go(action, method, data)
 
     def follow_link(self, name_or_xpath):
@@ -242,14 +279,17 @@ class Browser(object):
 
     @property
     def src(self):
+        """Read-only page-source"""
         return self._buf.getvalue()
 
     @property
     def url(self):
+        """Read-only current URL"""
         return self._curl.getinfo(pycurl.EFFECTIVE_URL)
 
     @property
     def title(self):
+        """Read-only convenience for getting the HTML title"""
         self.parse()
         try:
             return self._tree.xpath("/html/head/title/text()")[0].strip()
@@ -258,6 +298,7 @@ class Browser(object):
 
     @property
     def forms(self):
+        """Convenience for grabbing the HTML form nodes"""
         self.parse()
         forms = []
         for i, form in enumerate(self._tree.forms):
@@ -271,28 +312,34 @@ class Browser(object):
     @property
     def form_dropdowns_nodes(self):
         """Names of dropdowns for selected form"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
         return self._form.xpath('.//select')
 
     @property
     def form_dropdowns(self):
         """Names of dropdowns for selected form"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
         return (s.get('name') for s in self.form_dropdowns_nodes)
 
     @property
     def form_fields(self):
         """Dict of fields and values for selected form"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
-        return dict((pair for pair in self._form.fields.items() if pair[0] != ''))
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
+        return dict((pair for pair in self._form.fields.items()
+                          if pair[0] != ''))
 
     @property
     def form_submits(self):
         """Dict of submits for selected form"""
-        assert self._form is not None, "A form must be selected: %s" % self.forms
+        assert self._form is not None, \
+            "A form must be selected: %s" % self.forms
 
         submit_lst = self._form.xpath(".//input[@type='submit']")
-        assert len(submit_lst) > 0, "The selected form must contain a submit button"
+        assert len(submit_lst) > 0, \
+            "The selected form must contain a submit button"
 
         submits = []
         for i, submit in enumerate(submit_lst):
@@ -309,17 +356,23 @@ class Browser(object):
         return self._tree.xpath(*argv, **kwargs)
 
     def set_follow(self, switch):
-        """Indicate whether the browser should automatically follow redirect headers"""
+        """
+        Indicate whether the browser should automatically follow
+        redirect headers.
+        """
         self._curl.setopt(pycurl.FOLLOWLOCATION, 1 if switch else 0)
 
     def set_debug(self, switch):
+        """Set debug mode on or off"""
         def debug(typ, msg):
+            """Closure to pass in that makes debug info more readable"""
             indicators = {pycurl.INFOTYPE_TEXT:       '%',
                           pycurl.INFOTYPE_HEADER_IN:  '<',
                           pycurl.INFOTYPE_HEADER_OUT: '>',
                           pycurl.INFOTYPE_DATA_OUT:   '>>'}
             if typ in indicators.keys():
-                print "%(ind)s %(msg)s" % {'ind': indicators[typ], 'msg': msg.strip()}
+                print "%(ind)s %(msg)s" % {'ind': indicators[typ],
+                                           'msg': msg.strip()}
 
         self._curl.setopt(pycurl.VERBOSE, 1 if switch else 0)
         self._curl.setopt(pycurl.DEBUGFUNCTION, debug)
