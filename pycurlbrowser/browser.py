@@ -66,6 +66,7 @@ class Browser(object):
         self._canned_responses = dict()
         self.reset()
 
+        self.canned_url = None
         self.offline = False
 
         if url is not None:
@@ -94,7 +95,7 @@ class Browser(object):
         self._curl.setopt(pycurl.CUSTOMREQUEST, method)
         if data is not None:
             if method == 'GET':
-                sep = '?' if '?' in url else '&'
+                sep = '&' if '?' in url else '?'
                 url = "%(current)s%(sep)s%(data)s" % {'current': url,
                                                       'sep'    : sep,
                                                       'data'   : data}
@@ -103,11 +104,12 @@ class Browser(object):
 
         return url, data
 
-    def _setup_canned_response(self, can):
+    def _setup_canned_response(self, can, url):
         """Setup state based upon a canned response"""
         self._buf.write(can.src)
         self.reset()
         self._roundtrip = can.roundtrip
+        self.canned_url = url
         return can.code
 
     def _setup_http_response(self, url):
@@ -148,7 +150,7 @@ class Browser(object):
             if can.exception is not None:
                 raise can.exception
 
-            return self._setup_canned_response(can)
+            return self._setup_canned_response(can, url)
         except KeyError:
             if self.offline:
                 raise LookupError("No match for %s in canned response list: %s"\
@@ -252,8 +254,11 @@ class Browser(object):
                                                          if 'value' in submit
                                                          else ''})
 
+        action = self._form.action if   self._form.action is not None\
+                                   else self.url
+
         return self.form_submit_data(self._form.method,
-                                     self._form.action,
+                                     action,
                                      self._form_data)
 
     def form_submit_no_button(self):
@@ -268,8 +273,8 @@ class Browser(object):
 
     def form_submit_data(self, method, action, data):
         """Submit data, intelligently, to the given action URL"""
-        assert self._form is not None, \
-            "A form must be selected: %s" % self.forms
+        assert method is not None, "method must be supplied"
+        assert action is not None, "action must be supplied"
         return self.go(action, method, data)
 
     def follow_link(self, name_or_xpath):
@@ -291,6 +296,9 @@ class Browser(object):
     @property
     def url(self):
         """Read-only current URL"""
+        if self.canned_url is not None:
+            return self.canned_url
+
         return self._curl.getinfo(pycurl.EFFECTIVE_URL)
 
     @property

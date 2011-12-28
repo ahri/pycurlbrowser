@@ -38,6 +38,7 @@ class TestBrowserCanned(TestCase):
 
     def setUp(self):
         self.browser = Browser()
+        self.browser.offline = True
 
     def test_canned_response_duckduckgo(self):
         """Let's pretend that duckduckgo.com's frontpage 404s"""
@@ -132,5 +133,43 @@ class TestBrowserCanned(TestCase):
 
     def test_offline_mode(self):
         """If in offline mode and no canned response, raise an exception"""
-        self.browser.offline = True
         self.assertRaises(LookupError, self.browser.go, "someurl")
+
+class TestForms(TestCase):
+
+    """
+    Tests around form behaviour.
+    """
+
+    def setUp(self):
+        self.browser = Browser()
+        self.browser.offline = True
+
+    def test_no_method(self):
+        """When no method is specified in a form the default should be GET"""
+        form = CannedResponse()
+        form.src = """
+            <form>
+                <input type="hidden" name="name" value="value" />
+                <input type="submit" />
+            </form>
+        """
+        self.browser.add_canned_response(form, 'form')
+        self.browser.add_canned_response(form, 'form?name=value', 'GET', dict(name="value"))
+        self.browser.go('form')
+        self.browser.form_select(0)
+        self.browser.form_submit()
+
+    def test_no_action(self):
+        """When no action is specified in a form the URL should be replicated"""
+        form = CannedResponse()
+        form.src = """
+            <form method="post">
+                <input type="submit" />
+            </form>
+        """
+        self.browser.add_canned_response(form, 'form')
+        self.browser.add_canned_response(form, 'form', 'POST', dict())
+        self.browser.go('form')
+        self.browser.form_select(0)
+        self.browser.form_submit()
