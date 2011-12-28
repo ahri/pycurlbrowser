@@ -3,7 +3,7 @@ from distutils.core import setup
 
 setup(
     name="pycurlbrowser",
-    version='0.1.1',
+    version='0.2.0',
     description="A minimal browser based on pycurl/lxml",
     long_description=open("README").read(),
     author="Adam Piper",
