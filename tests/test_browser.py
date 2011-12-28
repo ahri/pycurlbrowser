@@ -81,13 +81,7 @@ class TestBrowserCanned(TestCase):
         can.exception = pycurl.error()
         self.browser.add_canned_response(can, url)
         # Act, Assert
-        # nb. for some reason assertRaises(pycurl.error, ...) doesn't seem to
-        #     work, so here's a hack around that
-        try:
-            self.browser.go(url)
-            self.assertTrue(False)
-        except pycurl.error:
-            self.assertTrue(True)
+        self.assertRaises(pycurl.error, self.browser.go, url)
 
     def test_canned_code_verbs(self):
         """Different canned response codes for different verbs"""
