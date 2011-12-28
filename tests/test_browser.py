@@ -67,3 +67,51 @@ class TestBrowser(TestCase):
         self.browser.go('duckduckgo.com/html')
         # Assert
         self.assertRaises(Exception, self.browser.go('duckduckgo.com/html'))
+
+    # TODO: should have a way to get canned response per POST of specific data
+    def test_canned_code_verbs(self):
+        """Different canned response codes for different verbs"""
+        # Arrange
+        url = 'duckduckgo.com/html'
+
+        can_post = CannedResponse()
+        can_post.code = 1
+        self.browser.add_canned_response(can_post, url, 'POST')
+
+        can_get = CannedResponse()
+        can_get.code = 2
+        self.browser.add_canned_response(can_get, url, 'GET')
+
+        can_put = CannedResponse()
+        can_put.code = 3
+        self.browser.add_canned_response(can_put, url, 'PUT')
+
+        can_delete = CannedResponse()
+        can_delete.code = 4
+        self.browser.add_canned_response(can_delete, url, 'DELETE')
+
+        # Act, Assert
+        self.assertEqual(self.browser.go(url, 'POST'),   1)
+        self.assertEqual(self.browser.go(url, 'GET'),    2)
+        self.assertEqual(self.browser.go(url, 'PUT'),    3)
+        self.assertEqual(self.browser.go(url, 'DELETE'), 4)
+
+    def test_canned_code_data(self):
+        """Different canned response codes for different data passed"""
+        # Arrange
+        url = 'duckduckgo.com/html'
+        method = 'POST'
+
+        can_one = CannedResponse()
+        can_one.code = 1
+        data_one = dict(foo='bar')
+        self.browser.add_canned_response(can_one, url, method, data_one)
+
+        can_two = CannedResponse()
+        can_two.code = 2
+        data_two = dict(bar='foo')
+        self.browser.add_canned_response(can_two, url, method, data_two)
+
+        # Act, Assert
+        self.assertEqual(self.browser.go(url, method, data_one), 1)
+        self.assertEqual(self.browser.go(url, method, data_two), 2)
