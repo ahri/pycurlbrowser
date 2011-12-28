@@ -129,3 +129,8 @@ class TestBrowserCanned(TestCase):
         # Act, Assert
         self.assertEqual(self.browser.go(url, method, data_one), 1)
         self.assertEqual(self.browser.go(url, method, data_two), 2)
+
+    def test_offline_mode(self):
+        """If in offline mode and no canned response, raise an exception"""
+        self.browser.offline = True
+        self.assertRaises(LookupError, self.browser.go, "someurl")

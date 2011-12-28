@@ -63,8 +63,10 @@ class Browser(object):
         self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
         self._curl.setopt(pycurl.TIMEOUT, 4)
-        self._canned_response = dict()
+        self._canned_responses = dict()
         self.reset()
+
+        self.offline = False
 
         if url is not None:
             self.go(url)
@@ -83,7 +85,7 @@ class Browser(object):
         """Add canned responses, for testing purposes"""
         data = escape_data(data, escaped)
 
-        self._canned_response[url, method, data] = can
+        self._canned_responses[url, method, data] = can
 
     def _setup_data(self, url, method, data, escaped):
         """Escape the data and configure curl based upon the method"""
@@ -142,12 +144,16 @@ class Browser(object):
 
         # ideally we don't need to traverse the network
         try:
-            can = self._canned_response[url, method, data]
+            can = self._canned_responses[url, method, data]
             if can.exception is not None:
                 raise can.exception
 
             return self._setup_canned_response(can)
         except KeyError:
+            if self.offline:
+                raise LookupError("No match for %s in canned response list: %s"\
+                        % ((url, method, data), self._canned_responses))
+
             return self._setup_http_response(url)
 
     def save(self, filename):
