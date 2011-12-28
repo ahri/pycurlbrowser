@@ -45,8 +45,8 @@ class Browser(object):
         self._curl.setopt(pycurl.USERAGENT, "Mozilla/5.0 (X11; Linux i686) AppleWebKit/534.24 (KHTML, like Gecko) Ubuntu/10.10 Chromium/11.0.696.65 Chrome/11.0.696.65 Safari/534.24")
         self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
         self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
-        self._curl.setopt(pycurl.TIMEOUT, 4);
-        self.canned_response = dict()
+        self._curl.setopt(pycurl.TIMEOUT, 4)
+        self._canned_response = dict()
         self.reset()
 
         if url is not None:
@@ -56,26 +56,48 @@ class Browser(object):
         """Clear out the browser state"""
         self._tree = None
         self._form = None
-        self._curl.setopt(pycurl.HTTPGET, 1)
         self._form_data = {}
         self._roundtrip = None
 
     roundtrip = property(lambda self: self._roundtrip)
 
-    def go(self, url):
-        """Go to a url"""
-        self._buf.truncate(0)
+    def _escape_data(self, data, escaped):
+        if data is not None and not escaped:
+            data = urlencode(data)
 
-        if url in self.canned_response:
-            can = self.canned_response[url]
-            if can.exception is not None:
-                raise can.exception
+        return data
 
-            self._buf.write(can.src)
-            self.reset()
-            self._roundtrip = can.roundtrip
-            return can.code
+    def add_canned_response(self, can, url, method='GET', data=None, escaped=False):
+        """Add canned responses, for testing purposes"""
+        data = self._escape_data(data, escaped)
 
+        self._canned_response[url, method, data] = can
+
+    def _setup_data(self, url, method, data, escaped):
+        """Escape the data and configure curl based upon the method"""
+        data = self._escape_data(data, escaped)
+
+        self._curl.setopt(pycurl.CUSTOMREQUEST, method)
+        if data is not None:
+            if method == 'GET':
+                sep = '?' if '?' in url else '&'
+                url = "%(current)s%(sep)s%(data)s" % {'current': url,
+                                                      'sep'    : sep,
+                                                      'data'   : data}
+            else:
+                self._curl.setopt(pycurl.POSTFIELDS, data)
+
+        return url, data
+
+    def _setup_canned_response(self, can):
+        """Setup state based upon a canned response"""
+        self._buf.write(can.src)
+        self.reset()
+        self._roundtrip = can.roundtrip
+        return can.code
+
+    def _setup_http_response(self, url):
+        """Setup state based upon an HTTP request"""
         self._curl.setopt(pycurl.URL, url)
 
         before = datetime.now()
@@ -96,6 +118,25 @@ class Browser(object):
         self.reset()
         self._roundtrip = datetime.now() - before
         return self._curl.getinfo(pycurl.RESPONSE_CODE)
+
+    def go(self, url, method='GET', data=None, escaped=False):
+        """Go to a url"""
+        # set up some variables
+        self._buf.truncate(0)
+        method = method.upper()
+
+        # sometimes the url might change to accomodate data
+        url, data = self._setup_data(url, method, data, escaped)
+
+        # ideally we don't need to traverse the network
+        try:
+            can = self._canned_response[url, method, data]
+            if can.exception is not None:
+                raise can.exception
+
+            return self._setup_canned_response(can)
+        except KeyError:
+            return self._setup_http_response(url)
 
     def save(self, filename):
         """Save the current page"""
@@ -186,18 +227,7 @@ class Browser(object):
     def form_submit_data(self, method, action, data):
         """Submit data, intelligently, to the given action URL"""
         assert self._form is not None, "A form must be selected: %s" % self.forms
-        data = urlencode(data)
-
-        if method.upper() == 'POST':
-            self._curl.setopt(pycurl.POST, 1)
-            self._curl.setopt(pycurl.POSTFIELDS, data)
-
-            return self.go(self._form.action)
-
-        sep = '?' if action.find('?') == -1 else '&'
-        return self.go("%(current)s%(sep)s%(data)s" % {'current': action,
-                                                       'sep'    : sep,
-                                                       'data'   : data})
+        return self.go(action, method, data)
 
     def follow_link(self, name_or_xpath):
         """Emulate clicking a link"""

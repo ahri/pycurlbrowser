@@ -37,7 +37,7 @@ def status_factory(status):
     elif 500 <= status < 600:
         return StatusServerError()
 
-    raise ValueError("I only deal with HTTP statuses in ranges I understand, and not success")
+    raise ValueError("Unsupported error code: %d" % status)
 
 
 class RestClient(Browser):
@@ -51,13 +51,13 @@ class RestClient(Browser):
         self._curl.setopt(pycurl.USERAGENT, "pycurl.rest_client 0.1")
         self.base = base
 
-    def go(self, obj, uid=None):
+    def go(self, obj, method, uid=None, data=None):
         url = '%(base)s/%(obj)s' % {'base': self.base,
                                     'obj' : obj}
         if uid is not None:
             url += '/%s' % uid
 
-        res = super(RestClient, self).go(url)
+        res = super(RestClient, self).go(url, method, data, escaped=True)
         if res != 200:
             raise status_factory(res)
         return res
@@ -65,32 +65,25 @@ class RestClient(Browser):
     # CRUD
 
     def create(self, obj, data=None):
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'POST')
-        self._curl.setopt(pycurl.POSTFIELDS, data)
-        self.go(obj)
+        self.go(obj, 'POST', data=data)
         return self.src
 
     def read(self, obj, uid=None):
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'GET')
-        self.go(obj, uid)
+        self.go(obj, 'GET', uid=uid)
         return self.src
 
     def head(self, obj, uid=None):
         # TODO: care about headers
         self._curl.setopt(pycurl.NOBODY, 1)
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'HEAD')
-        self.go(obj, uid)
+        self.go(obj, 'HEAD', uid=uid)
 
     def update(self, obj, uid, data=None):
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'PUT')
-        self._curl.setopt(pycurl.POSTFIELDS, data)
-        self.go(obj, uid)
+        self.go(obj, 'PUT', uid=uid, data=data)
         return self.src
 
     def destroy(self, obj, uid):
         # TODO: care about headers
-        self._curl.setopt(pycurl.CUSTOMREQUEST, 'DELETE')
-        self.go(obj, uid)
+        self.go(obj, 'DELETE', uid=uid)
         return self.src
 
 class RestClientJson(RestClient):

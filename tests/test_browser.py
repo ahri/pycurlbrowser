@@ -1,8 +1,9 @@
 from unittest import TestCase
 from pycurlbrowser import Browser, CannedResponse
 from datetime import timedelta
+import pycurl
 
-class TestBrowser(TestCase):
+class TestBrowserLive(TestCase):
 
     """
     Some rather brittle tests based upon existing websites
@@ -10,6 +11,8 @@ class TestBrowser(TestCase):
 
     def setUp(self):
         self.browser = Browser()
+        self.browser._curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+        self.browser._curl.setopt(pycurl.TIMEOUT, 10)
 
     def test_visit_duckduckgo(self):
         """Visit a website, check that we get there"""
@@ -27,48 +30,65 @@ class TestBrowser(TestCase):
         print self.browser.src
         self.assertTrue(search in self.browser.src)
 
+class TestBrowserCanned(TestCase):
+
+    """
+    Tests on canned responses
+    """
+
+    def setUp(self):
+        self.browser = Browser()
+
     def test_canned_response_duckduckgo(self):
         """Let's pretend that duckduckgo.com's frontpage 404s"""
         # Arrange
+        url = 'duckduckgo.com/html'
         can = CannedResponse()
         can.code = 404
-        self.browser.canned_response['duckduckgo.com/html'] = can
+        self.browser.add_canned_response(can, url)
         # Act, Assert
-        self.assertEqual(self.browser.go('duckduckgo.com/html'), 404)
+        self.assertEqual(self.browser.go(url), 404)
 
     def test_canned_content_duckduckgo(self):
         """Let's pretend that duckduckgo.com's frontpage has a silly message"""
         # Arrange
+        url = 'duckduckgo.com/html'
         can = CannedResponse()
         can.src = "Try Google"
-        self.browser.canned_response['duckduckgo.com/html'] = can
+        self.browser.add_canned_response(can, url)
         # Act
-        self.browser.go('duckduckgo.com/html')
+        self.browser.go(url)
         # Assert
         self.assertEqual(self.browser.src, can.src)
 
     def test_canned_roundtrip_duckduckgo(self):
         """Let's pretend that duckduckgo.com's really slow"""
         # Arrange
+        url = 'duckduckgo.com/html'
         can = CannedResponse()
         can.roundtrip = timedelta(5)
-        self.browser.canned_response['duckduckgo.com/html'] = can
+        self.browser.add_canned_response(can, url)
         # Act
-        self.browser.go('duckduckgo.com/html')
+        self.browser.go(url)
         # Assert
         self.assertEqual(self.browser.roundtrip, can.roundtrip)
 
     def test_canned_exception_duckduckgo(self):
-        """Let's pretend that duckduckgo.com's really slow"""
+        """What if curl raises an exception?"""
         # Arrange
+        url = 'duckduckgo.com/html'
         can = CannedResponse()
-        self.browser.canned_response['duckduckgo.com/html'] = can
-        # Act
-        self.browser.go('duckduckgo.com/html')
-        # Assert
-        self.assertRaises(Exception, self.browser.go('duckduckgo.com/html'))
+        can.exception = pycurl.error()
+        self.browser.add_canned_response(can, url)
+        # Act, Assert
+        # nb. for some reason assertRaises(pycurl.error, ...) doesn't seem to
+        #     work, so here's a hack around that
+        try:
+            self.browser.go(url)
+            self.assertTrue(False)
+        except pycurl.error:
+            self.assertTrue(True)
 
-    # TODO: should have a way to get canned response per POST of specific data
     def test_canned_code_verbs(self):
         """Different canned response codes for different verbs"""
         # Arrange
