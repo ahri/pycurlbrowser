@@ -23,6 +23,45 @@ def escape_data(data, escaped):
 
     return data
 
+def post_data_present(d_ref, d_in):
+    """Make sure that every element of d_ref exists in d_in"""
+    setify = lambda s: set(s.split('&'))
+    return len(setify(d_ref) - setify(d_in)) == 0
+
+def post_best_fit(d_in, *d_ref):
+    """Return the best fitting data"""
+    comp = len(d_in)
+    diffs = dict()
+    for d in d_ref:
+        if not post_data_present(d, d_in):
+            continue
+
+        diffs[d] = abs(len(d) - comp)
+
+    # sort by diffs values
+    e = diffs.keys()
+    e.sort(cmp=lambda a, b: cmp(diffs[a], diffs[b]))
+
+    try:
+        return e[0]
+    except IndexError:
+        raise IndexError("Could not choose from zero options for input data: %s" % d_in)
+
+def canned_key_partial_subset(matcher, sample):
+    """Match the first two elements of each tuple in sample to the matcher"""
+    return [k[2] for k in sample if matcher == k[0:2]]
+
+def select_best_can(url, method, data, cans):
+    """Given a dict of cans, try to give the best match"""
+    if data is None:
+        return cans[url, method, data]
+
+    return cans[url,
+                method,
+                post_best_fit(data,
+                              *canned_key_partial_subset((url, method),
+                                                         cans.keys()))]
+
 class CannedResponse(object):
 
     """
@@ -146,15 +185,15 @@ class Browser(object):
 
         # ideally we don't need to traverse the network
         try:
-            can = self._canned_responses[url, method, data]
+            can = select_best_can(url, method, data, self._canned_responses)
             if can.exception is not None:
                 raise can.exception
 
             return self._setup_canned_response(can, url)
         except KeyError:
             if self.offline:
-                raise LookupError("No match for %s in canned response list: %s"\
-                        % ((url, method, data), self._canned_responses))
+                raise LookupError("In offline mode, but no match for %s in canned response list: %s"\
+                        % ((url, method, data), self._canned_responses.keys()))
 
             return self._setup_http_response(url)
 

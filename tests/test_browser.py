@@ -1,34 +1,8 @@
 from unittest import TestCase
 from pycurlbrowser import Browser, CannedResponse
+from pycurlbrowser.browser import post_data_present, post_best_fit, canned_key_partial_subset
 from datetime import timedelta
 import pycurl
-
-class TestBrowserLive(TestCase):
-
-    """
-    Some rather brittle tests based upon existing websites
-    """
-
-    def setUp(self):
-        self.browser = Browser()
-        self.browser._curl.setopt(pycurl.CONNECTTIMEOUT, 5)
-        self.browser._curl.setopt(pycurl.TIMEOUT, 10)
-
-    def test_visit_duckduckgo(self):
-        """Visit a website, check that we get there"""
-        self.assertEqual(self.browser.go('duckduckgo.com'), 200)
-        self.assertEqual(self.browser.url.lower(), 'http://duckduckgo.com')
-
-    def test_search_duckduckgo(self):
-        """Hopefully a search results page will include the search string"""
-        search = "a crumble layer that you swirl"
-        self.assertEqual(self.browser.go('duckduckgo.com/html'), 200)
-        self.browser.form_select(0)
-        self.assertTrue('q' in self.browser.form_fields)
-        self.browser.form_data_update(q=search)
-        self.assertEqual(self.browser.form_submit(), 200)
-        print self.browser.src
-        self.assertTrue(search in self.browser.src)
 
 class TestBrowserCanned(TestCase):
 
@@ -162,14 +136,99 @@ class TestForms(TestCase):
 
     def test_no_action(self):
         """When no action is specified in a form the URL should be replicated"""
+        url = 'form'
         form = CannedResponse()
         form.src = """
             <form method="post">
                 <input type="submit" />
             </form>
         """
-        self.browser.add_canned_response(form, 'form')
-        self.browser.add_canned_response(form, 'form', 'POST', dict())
-        self.browser.go('form')
+        self.browser.add_canned_response(form, url)
+        self.browser.add_canned_response(form, url, 'POST', dict())
+        self.browser.go(url)
         self.browser.form_select(0)
         self.browser.form_submit()
+
+    def test_match_data(self):
+        """Pick the best data match"""
+        url = 'form'
+        form = CannedResponse()
+        form.src = """
+            <form method="post">
+                <input type="text" name="one" value="one" />
+                <input type="text" name="two" value="two" />
+                <input type="text" name="three" value="three" />
+                <input type="submit" />
+            </form>
+        """
+        right = CannedResponse()
+        right.src = "right"
+        wrong = CannedResponse()
+        wrong.src = "wrong"
+
+        self.browser.add_canned_response(form, url)
+        self.browser.add_canned_response(wrong, url, 'POST', dict(one="one"))
+        self.browser.add_canned_response(wrong, url, 'POST', dict(two="two"))
+        self.browser.add_canned_response(right, url, 'POST', dict(one="one", two="two"))
+        self.browser.add_canned_response(wrong, url, 'POST', dict(three="three"))
+
+        self.browser.go(url)
+        self.browser.form_select(0)
+        self.browser.form_submit()
+        self.assertEqual(right.src, self.browser.src)
+
+    def test_no_match_data(self):
+        """Error when no canned data matches"""
+        url = 'form'
+        form = CannedResponse()
+        form.src = """
+            <form method="post">
+                <input type="text" name="one" value="one" />
+                <input type="text" name="two" value="two" />
+                <input type="text" name="three" value="three" />
+                <input type="submit" />
+            </form>
+        """
+        wrong = CannedResponse()
+        wrong.src = "wrong"
+
+        self.browser.add_canned_response(form, url)
+        self.browser.add_canned_response(wrong, url, 'POST', dict(four="four"))
+
+        self.browser.go(url)
+        self.browser.form_select(0)
+        self.assertRaises(IndexError, self.browser.form_submit)
+
+class Util(TestCase):
+
+    """
+    Exercise the utilities
+    """
+
+    def test_data_present(self):
+        """Ensure that the reference data exists in the input data"""
+        d_ref = "a=1&b=2"
+        d_in  = "a=1&c=3&b=2"
+
+        self.assertTrue(post_data_present(d_ref, d_in))
+
+    def test_data_not_present(self):
+        """Ensure that the reference data exists in the input data, and fail when it doesn't"""
+        d_ref = "a=1&c=3&b=2"
+        d_in  = "a=1&b=2"
+
+        self.assertFalse(post_data_present(d_ref, d_in))
+
+    def test_data_best_fit(self):
+        """Determine the best match from a list of data"""
+        d_in = "a=1&b=2&some=other&uninteresting=crap"
+        expected_winner = "a=1&b=2"
+        d_ref  = ["a=1&b=2&c=3&d=4&e=5", "a=1", expected_winner, "a=1&b=2&c=3&d=4&e=5&f=6"]
+        self.assertEqual(post_best_fit(d_in, *d_ref), expected_winner)
+
+    def test_partial_key_match(self):
+        """Knowing that a canned key is (url, method, data), match keys on (url, method)"""
+        matcher = ('a', 'b')
+        sample = [('a', 'b', 'c=1'), ('d', 'e', 'f=2'), ('a', 'b', 'i=3')]
+        expected = ['c=1', 'i=3']
+        self.assertEqual(canned_key_partial_subset(matcher, sample), expected)
