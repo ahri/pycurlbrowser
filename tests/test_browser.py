@@ -197,7 +197,7 @@ class TestForms(TestCase):
 
         self.browser.go(url)
         self.browser.form_select(0)
-        self.assertRaises(IndexError, self.browser.form_submit)
+        self.assertRaises(ValueError, self.browser.form_submit)
 
 class Util(TestCase):
 

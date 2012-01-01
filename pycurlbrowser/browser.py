@@ -38,14 +38,10 @@ def post_best_fit(d_in, *d_ref):
 
         diffs[d] = abs(len(d) - comp)
 
-    # sort by diffs values
-    e = diffs.keys()
-    e.sort(cmp=lambda a, b: cmp(diffs[a], diffs[b]))
-
     try:
-        return e[0]
-    except IndexError:
-        raise IndexError("Could not choose from zero options for input data: %s" % d_in)
+        return min(diffs, key=diffs.get)
+    except ValueError:
+        raise ValueError("Could not choose from zero options for input data: %s" % d_in)
 
 def canned_key_partial_subset(matcher, sample):
     """Match the first two elements of each tuple in sample to the matcher"""
