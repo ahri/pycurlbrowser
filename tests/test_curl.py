@@ -1,0 +1,50 @@
+from unittest import TestCase
+from pycurlbrowser import CurlBackend
+from datetime import timedelta
+import pycurl
+
+class TestBackendApi(TestCase):
+
+    """
+    Test that the HttpBackend API is adhered-to.
+    """
+
+    def setUp(self):
+        self.backend = CurlBackend()
+        self.backend._curl.setopt(pycurl.CONNECTTIMEOUT, 5)
+        self.backend._curl.setopt(pycurl.TIMEOUT, 10)
+
+    def visit(self):
+        url     = 'http://www.reddit.com/'
+        method  = 'GET'
+        data    = None
+        headers = None
+        follow  = None
+        agent   = "foo"
+        retries = 1
+        debug   = None
+        self.backend.go(url, method, data, headers, follow, agent, retries, debug)
+        return url
+
+    def test_go(self):
+        _ = self.visit()
+
+    def test_src(self):
+        _ = self.visit()
+        self.assertTrue(len(self.backend.src) > 0)
+
+    def test_url(self):
+        url = self.visit()
+        self.assertEqual(self.backend.url, url)
+
+    def test_roundtrip(self):
+        _ = self.visit()
+        self.assertTrue(self.backend.roundtrip > timedelta(0))
+
+    def test_http_code(self):
+        _ = self.visit()
+        self.assertEqual(self.backend.http_code, 200)
+
+    def test_headers(self):
+        _ = self.visit()
+        self.assertTrue(self.backend.headers.keys > 0)

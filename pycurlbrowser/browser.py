@@ -1,3 +1,4 @@
+# coding: utf-8
 # Copyright (C) Adam Piper, 2012
 # See COPYING for licence details (GNU AGPLv3)
 
@@ -6,192 +7,87 @@ A python web browser for scraping purposes.
 Includes canned responses for testing.
 """
 
-import pycurl
-import StringIO
-from lxml.html import fromstring
 from urllib import urlencode
-from datetime import datetime, timedelta
+from .backend import HttpBackend, CurlBackend
 
-def check_curl(item):
-    """Convenience method to check whether curl supports a given feature"""
-    return item in pycurl.version_info()[8]
+def url_for_get(url, data):
+    """Encode the given data onto a URL"""
+    sep = '&' if '?' in url else '?'
+    url = "%(current)s%(sep)s%(data)s" % {'current': url,
+                                          'sep'    : sep,
+                                          'data'   : urlencode(data)}
 
-def escape_data(data, escaped):
-    """Escape data if neccessary"""
-    if data is not None and not escaped:
-        data = urlencode(data)
+    return url
 
-    return data
-
-def post_data_present(d_ref, d_in):
-    """Make sure that every element of d_ref exists in d_in"""
-    setify = lambda s: set(s.split('&'))
-    return len(setify(d_ref) - setify(d_in)) == 0
-
-def post_best_fit(d_in, *d_ref):
-    """Return the best fitting data"""
-    comp = len(d_in)
-    diffs = dict()
-    for d in d_ref:
-        if not post_data_present(d, d_in):
-            continue
-
-        diffs[d] = abs(len(d) - comp)
-
-    try:
-        return min(diffs, key=diffs.get)
-    except ValueError:
-        raise ValueError("Could not choose from zero options for input data: %s" % d_in)
-
-def canned_key_partial_subset(matcher, sample):
-    """Match the first two elements of each tuple in sample to the matcher"""
-    return [k[2] for k in sample if matcher == k[0:2]]
-
-def select_best_can(url, method, data, cans):
-    """Given a dict of cans, try to give the best match"""
-    if data is None:
-        return cans[url, method, data]
-
-    return cans[url,
-                method,
-                post_best_fit(data,
-                              *canned_key_partial_subset((url, method),
-                                                         cans.keys()))]
-
-class CannedResponse(object):
+class Browser(HttpBackend):
 
     """
-    A fictional response predominantly for testing purposes
+    Emulate a normal browser.
+
+    A lazy-loading backend-agnostic minimal web browser.
     """
 
-    def __init__(self):
-        """Set up some defaults"""
-        self.code = 200
-        self.exception = None
-        self.roundtrip = timedelta()
-        self.src = ''
+    def __init__(self, url=None, backend=CurlBackend()):
+        self._backend = backend
 
-class Browser(object):
-
-    """
-    Emulate a normal browser
-
-    This class is a convenience on top of libcurl and lxml; it should behave
-    like a normal browser (but lacking Javascript), and allow DOM queries.
-    """
-
-    def __init__(self, url=None):
         self.retries = 0
-        self._curl = pycurl.Curl() # note: this is an "easy" connection
-        self.set_follow(True) # follow location headers
-        self._curl.setopt(pycurl.AUTOREFERER, 1)
-        self._curl.setopt(pycurl.MAXREDIRS, 20)
-        self._curl.setopt(pycurl.ENCODING, "gzip")
-        self._buf = StringIO.StringIO()
-        self._curl.setopt(pycurl.WRITEFUNCTION,
-                          self._buf.write) # callback for content buffer
-        self._curl.setopt(pycurl.USERAGENT,
-                          "Mozilla/5.0 (X11; Linux i686) " +\
-                          "AppleWebKit/534.24 (KHTML, like Gecko) " +\
-                          "Ubuntu/10.10 Chromium/11.0.696.65 " +\
-                          "Chrome/11.0.696.65 Safari/534.24")
-        self._curl.setopt(pycurl.COOKIEFILE, "") # use cookies
-        self._curl.setopt(pycurl.CONNECTTIMEOUT, 2)
-        self._curl.setopt(pycurl.TIMEOUT, 4)
-        self._canned_responses = dict()
-        self.reset()
+        self.follow = True
+        self.debug = False
+        # TODO: come up with a new user-agent, supply version
+        self.agent = "Mozilla/5.0 (X11; Linux i686) " +\
+                     "AppleWebKit/534.24 (KHTML, like Gecko) " +\
+                     "Ubuntu/10.10 Chromium/11.0.696.65 " +\
+                     "Chrome/11.0.696.65 Safari/534.24"
 
-        self.canned_url = None
-        self.offline = False
+        self._reset_state()
 
         if url is not None:
             self.go(url)
 
-    def reset(self):
+    def _reset_state(self):
         """Clear out the browser state"""
         self._tree = None
         self._form = None
         self._form_data = {}
-        self._roundtrip = None
 
-    roundtrip = property(lambda self: self._roundtrip)
+    @property
+    def roundtrip(self):
+        """Read-only request roundtrip timing"""
+        return self._backend.roundtrip
 
-    def add_canned_response(self, can, url, method='GET',
-                                  data=None, escaped=False):
-        """Add canned responses, for testing purposes"""
-        data = escape_data(data, escaped)
+    @property
+    def headers(self):
+        """Read-only headers dict"""
+        return self._backend.headers
 
-        self._canned_responses[url, method, data] = can
-
-    def _setup_data(self, url, method, data, escaped):
-        """Escape the data and configure curl based upon the method"""
-        data = escape_data(data, escaped)
-
-        self._curl.setopt(pycurl.CUSTOMREQUEST, method)
-        if data is not None:
-            if method == 'GET':
-                sep = '&' if '?' in url else '?'
-                url = "%(current)s%(sep)s%(data)s" % {'current': url,
-                                                      'sep'    : sep,
-                                                      'data'   : data}
-            else:
-                self._curl.setopt(pycurl.POSTFIELDS, data)
-
-        return url, data
-
-    def _setup_canned_response(self, can, url):
-        """Setup state based upon a canned response"""
-        self._buf.write(can.src)
-        self.reset()
-        self._roundtrip = can.roundtrip
-        self.canned_url = url
-        return can.code
-
-    def _setup_http_response(self, url):
-        """Setup state based upon an HTTP request"""
-        self._curl.setopt(pycurl.URL, url)
-
-        before = datetime.now()
-        retries = self.retries
-        exception = Exception("Dummy exception")
-
-        while retries >= 0 and exception is not None:
-            retries -= 1
-            try:
-                self._curl.perform()
-                exception = None
-            except pycurl.error, ex:
-                exception = ex
-
-        if exception is not None:
-            raise exception
-
-        self.reset()
-        self._roundtrip = datetime.now() - before
-        return self._curl.getinfo(pycurl.RESPONSE_CODE)
-
-    def go(self, url, method='GET', data=None, escaped=False):
-        """Go to a url"""
-        # set up some variables
-        self._buf.truncate(0)
+    def go(self,
+           url,
+           method='GET',
+           data=None,
+           headers=None,
+           follow=None,
+           agent=None,
+           retries=None,
+           debug=None):
+        """Go to a url, return the HTTP response code"""
         method = method.upper()
 
-        # sometimes the url might change to accomodate data
-        url, data = self._setup_data(url, method, data, escaped)
+        if data is not None and method == 'GET':
+            url = url_for_get(url, data)
+            data = None
 
-        # ideally we don't need to traverse the network
-        try:
-            can = select_best_can(url, method, data, self._canned_responses)
-            if can.exception is not None:
-                raise can.exception
+        self._backend.go(url=url,
+                         method=method,
+                         data=data,
+                         headers=headers,
+                         follow=follow or self.follow,
+                         retries=retries or self.retries,
+                         agent=agent or self.agent,
+                         debug=debug or self.debug)
 
-            return self._setup_canned_response(can, url)
-        except KeyError:
-            if self.offline:
-                raise LookupError("In offline mode, but no match for %s in canned response list: %s"\
-                        % ((url, method, data), self._canned_responses.keys()))
+        self._reset_state()
 
-            return self._setup_http_response(url)
+        return self.http_code
 
     def save(self, filename):
         """Save the current page"""
@@ -201,6 +97,8 @@ class Browser(object):
     def save_pretty(self, filename):
         """Save the current page, after lxml has prettified it"""
         self.parse()
+
+        # lazy-load LXML
         from lxml.builder import ET
         with open(filename, 'w') as fp:
             fp.write(ET.tostring(self._tree, pretty_print=True))
@@ -210,8 +108,10 @@ class Browser(object):
         if self._tree is not None:
             return
 
+        # lazy-load LXML
+        from lxml.html import fromstring
         self._tree = fromstring(self.src)
-        self._tree.make_links_absolute(self._curl.getinfo(pycurl.EFFECTIVE_URL))
+        self._tree.make_links_absolute(self.url)
 
     # form selection/submission
 
@@ -292,8 +192,8 @@ class Browser(object):
         action = self._form.action if   self._form.action is not None\
                                    else self.url
 
-        return self.form_submit_data(self._form.method,
-                                     action,
+        return self.form_submit_data(action,
+                                     self._form.method,
                                      self._form_data)
 
     def form_submit_no_button(self):
@@ -302,15 +202,15 @@ class Browser(object):
         """
         assert self._form is not None, \
             "A form must be selected: %s" % self.forms
-        return self.form_submit_data(self._form.method,
-                                     self._form.action,
+        return self.form_submit_data(self._form.action,
+                                     self._form.method,
                                      self._form_data)
 
-    def form_submit_data(self, method, action, data):
+    def form_submit_data(self, action, method, data):
         """Submit data, intelligently, to the given action URL"""
-        assert method is not None, "method must be supplied"
         assert action is not None, "action must be supplied"
-        return self.go(action, method, data)
+        assert method is not None, "method must be supplied"
+        return self.go(action, method=method, data=data)
 
     def follow_link(self, name_or_xpath):
         """Emulate clicking a link"""
@@ -324,17 +224,19 @@ class Browser(object):
     # helpers
 
     @property
+    def http_code(self):
+        """Read-only last HTTP response code"""
+        return self._backend.http_code
+
+    @property
     def src(self):
         """Read-only page-source"""
-        return self._buf.getvalue()
+        return self._backend.src
 
     @property
     def url(self):
         """Read-only current URL"""
-        if self.canned_url is not None:
-            return self.canned_url
-
-        return self._curl.getinfo(pycurl.EFFECTIVE_URL)
+        return self._backend.url
 
     @property
     def title(self):
@@ -403,25 +305,3 @@ class Browser(object):
         """Execute an XPATH against the current node tree"""
         self.parse()
         return self._tree.xpath(*argv, **kwargs)
-
-    def set_follow(self, switch):
-        """
-        Indicate whether the browser should automatically follow
-        redirect headers.
-        """
-        self._curl.setopt(pycurl.FOLLOWLOCATION, 1 if switch else 0)
-
-    def set_debug(self, switch):
-        """Set debug mode on or off"""
-        def debug(typ, msg):
-            """Closure to pass in that makes debug info more readable"""
-            indicators = {pycurl.INFOTYPE_TEXT:       '%',
-                          pycurl.INFOTYPE_HEADER_IN:  '<',
-                          pycurl.INFOTYPE_HEADER_OUT: '>',
-                          pycurl.INFOTYPE_DATA_OUT:   '>>'}
-            if typ in indicators.keys():
-                print "%(ind)s %(msg)s" % {'ind': indicators[typ],
-                                           'msg': msg.strip()}
-
-        self._curl.setopt(pycurl.VERBOSE, 1 if switch else 0)
-        self._curl.setopt(pycurl.DEBUGFUNCTION, debug)

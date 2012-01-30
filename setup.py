@@ -1,16 +1,20 @@
 #!/usr/bin/env python
 from distutils.core import setup
 
+MODULE = 'pycurlbrowser'
+
+execfile(MODULE + '/version.py')
+
 setup(
-    name="pycurlbrowser",
-    version='0.2.2',
+    name=MODULE,
+    version=__version__,
     description="A minimal browser based on pycurl/lxml",
     long_description=open("README").read(),
     author="Adam Piper",
     author_email="adam@ahri.net",
     license="AGPLv3",
     url="https://github.com/ahri/pycurlbrowser",
-    packages=["pycurlbrowser"],
+    packages=[MODULE, MODULE + '.backend'],
     platforms='any',
     install_requires=[
         'pycurl>=7.18',
