@@ -217,7 +217,7 @@ class Browser(HttpBackend):
         if name_or_xpath[0] == '/':
             xpath = name_or_xpath
         else:
-            xpath = '//a[text()="%s"]' % name_or_xpath
+            xpath = '//*[text()="%s"]/ancestor::a' % name_or_xpath
         link = self.xpath(xpath)[0]
         return self.go(link.get('href'))
 

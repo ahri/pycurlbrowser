@@ -92,3 +92,45 @@ class TestForms(TestCase):
         self.browser.go(url)
         self.browser.form_select(0)
         self.browser.form_submit()
+
+    def test_follow_link(self):
+        """Follow a link"""
+        link_url = 'link'
+        right_url = 'http://right'
+        link_text = "Link text"
+
+        link = MockResponse()
+        link.src = """
+            <a href="%s">%s</a>
+        """ % (right_url, link_text)
+        right = MockResponse()
+        right.src = "success"
+
+        self.backend.responses.add(link, link_url)
+        self.backend.responses.add(right, right_url)
+
+        # Act
+        self.browser.go(link_url)
+        self.browser.follow_link(link_text)
+        self.assertEqual(self.browser.src, right.src)
+
+    def test_follow_link(self):
+        """Follow a link with span"""
+        link_url = 'link'
+        right_url = 'http://right'
+        link_text = "Link text"
+
+        link = MockResponse()
+        link.src = """
+            <a href="%s"><span>%s</span></a>
+        """ % (right_url, link_text)
+        right = MockResponse()
+        right.src = "success"
+
+        self.backend.responses.add(link, link_url)
+        self.backend.responses.add(right, right_url)
+
+        # Act
+        self.browser.go(link_url)
+        self.browser.follow_link(link_text)
+        self.assertEqual(self.browser.src, right.src)
