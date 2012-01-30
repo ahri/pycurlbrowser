@@ -17,6 +17,8 @@ setup(
     packages=[MODULE, MODULE + '.backend'],
     platforms='any',
     install_requires=[
+    ],
+    test_requires=[
         'pycurl>=7.18',
         'lxml>=2.3',
         'simplejson>=2.2.1',
