@@ -10,6 +10,7 @@ parts are missing!
 from unittest import TestCase
 import inspect
 from pycurlbrowser.backend import *
+from pycurlbrowser import Browser
 
 def is_http_backend_derived(t):
     if t is HttpBackend:
