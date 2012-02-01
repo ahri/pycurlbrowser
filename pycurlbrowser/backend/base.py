@@ -6,7 +6,7 @@ class HttpBackend(object):
     Interface for HTTP backends
     """
 
-    def go(self, url, method, data, headers, follow, agent, retries, debug):
+    def go(self, url, method, data, headers, auth, follow, agent, retries, debug):
         """
         Visit a URL.
 
@@ -16,6 +16,7 @@ class HttpBackend(object):
             method:  HTTP verb to use
             data:    Dict of data to supply, or None
             headers: Dict of headers to supply, or None
+            auth:    A two-tuple of user/password
             follow:  Whether to automatically follow 3xx responses
             agent:   User agent to supply
             retries: Number of times to try the HTTP request
