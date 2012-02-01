@@ -23,11 +23,12 @@ def is_http_backend_derived(t):
 def derived_types():
     return [t for t in globals().values() if is_http_backend_derived(t)]
 
-class ApiTests (TestCase):
+class ApiTests(TestCase):
 
     def test_go(self):
+        comp = inspect.getargspec(HttpBackend.go)
         for t in derived_types():
-            self.assertEqual(inspect.getargspec(HttpBackend.go), inspect.getargspec(t.go))
+            self.assertEqual(comp, inspect.getargspec(t.go), "Type %(t)s does not adhere to the spec %(s)s" % dict(t=t, s=comp))
 
     def test_properties(self):
         comp = set(dir(HttpBackend))
