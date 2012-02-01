@@ -64,6 +64,18 @@ class TestBrowserMocked(TestCase):
         self.backend = MockBackend()
         self.browser = Browser(backend=self.backend)
 
+    def go(self, url, method='GET', data=None, headers=None):
+        self.backend.go(url=url,
+                        method=method,
+                        data=data,
+                        headers=headers,
+                        follow=None,
+                        agent=None,
+                        retries=None,
+                        debug=None)
+
+        return self.backend.http_code
+
     def test_mocked_response_duckduckgo(self):
         """Let's pretend that duckduckgo.com's frontpage 404s"""
         # Arrange
@@ -72,7 +84,7 @@ class TestBrowserMocked(TestCase):
         mock.http_code = 404
         self.backend.responses.add(mock, url)
         # Act, Assert
-        self.assertEqual(self.browser.go(url), 404)
+        self.assertEqual(self.go(url), 404)
 
     def test_mocked_content_duckduckgo(self):
         """Let's pretend that duckduckgo.com's frontpage has a silly message"""
@@ -82,9 +94,9 @@ class TestBrowserMocked(TestCase):
         mock.src = "Try Google"
         self.backend.responses.add(mock, url)
         # Act
-        self.browser.go(url)
+        self.go(url)
         # Assert
-        self.assertEqual(self.browser.src, mock.src)
+        self.assertEqual(self.backend.src, mock.src)
 
     def test_mocked_roundtrip_duckduckgo(self):
         """Let's pretend that duckduckgo.com's really slow"""
@@ -94,9 +106,9 @@ class TestBrowserMocked(TestCase):
         mock.roundtrip = timedelta(5)
         self.backend.responses.add(mock, url)
         # Act
-        self.browser.go(url)
+        self.go(url)
         # Assert
-        self.assertEqual(self.browser.roundtrip, mock.roundtrip)
+        self.assertEqual(self.backend.roundtrip, mock.roundtrip)
 
     def test_mocked_exception_duckduckgo(self):
         """What if curl raises an exception?"""
@@ -106,7 +118,7 @@ class TestBrowserMocked(TestCase):
         mock.exception = pycurl.error()
         self.backend.responses.add(mock, url)
         # Act, Assert
-        self.assertRaises(pycurl.error, self.browser.go, url)
+        self.assertRaises(pycurl.error, self.go, url)
 
     def test_mocked_code_verbs(self):
         """Different mocked response codes for different verbs"""
@@ -130,10 +142,10 @@ class TestBrowserMocked(TestCase):
         self.backend.responses.add(mock_delete, url, 'DELETE')
 
         # Act, Assert
-        self.assertEqual(self.browser.go(url, 'POST'),   1)
-        self.assertEqual(self.browser.go(url, 'GET'),    2)
-        self.assertEqual(self.browser.go(url, 'PUT'),    3)
-        self.assertEqual(self.browser.go(url, 'DELETE'), 4)
+        self.assertEqual(self.go(url, 'POST'),   1)
+        self.assertEqual(self.go(url, 'GET'),    2)
+        self.assertEqual(self.go(url, 'PUT'),    3)
+        self.assertEqual(self.go(url, 'DELETE'), 4)
 
     def test_mocked_code_data(self):
         """Different mocked response codes for different data passed"""
@@ -152,12 +164,12 @@ class TestBrowserMocked(TestCase):
         self.backend.responses.add(mock_two, url, method, data_two)
 
         # Act, Assert
-        self.assertEqual(self.browser.go(url, method, data_one), 1)
-        self.assertEqual(self.browser.go(url, method, data_two), 2)
+        self.assertEqual(self.go(url, method, data_one), 1)
+        self.assertEqual(self.go(url, method, data_two), 2)
 
     def test_no_choices(self):
         """If there are no choices set, raise an exception"""
-        self.assertRaises(LookupError, self.browser.go, "someurl")
+        self.assertRaises(LookupError, self.go, "someurl")
 
     def test_match_data(self):
         """Pick the best data match"""
@@ -217,7 +229,7 @@ class TestBrowserMocked(TestCase):
         method = 'POST'
         data = "abc123"
         self.backend.responses.add(mock=mock, url=url, method=method, data=data)
-        self.assertEqual(self.browser.go(url=url, method=method, data=data), 200)
+        self.assertEqual(self.go(url=url, method=method, data=data), 200)
 
     def test_header_passed(self):
         """Pass a header and make sure the correct data comes back"""
@@ -229,8 +241,8 @@ class TestBrowserMocked(TestCase):
         url = "header"
         self.backend.responses.add(right, url, headers=headers_for_right)
         self.backend.responses.add(wrong, url)
-        self.browser.go(url=url, headers=headers_for_right)
-        self.assertEqual(self.browser.src, right.src)
+        self.go(url=url, headers=headers_for_right)
+        self.assertEqual(self.backend.src, right.src)
 
     def test_returned_headers(self):
         """Set some headers in the mock and check they are passed back"""
@@ -243,7 +255,7 @@ class TestBrowserMocked(TestCase):
         self.backend.responses.add(mock, url)
 
         # Act
-        self.browser.go(url)
+        self.go(url)
 
         # Assert
-        self.assertEqual(self.browser.headers, mock.headers)
+        self.assertEqual(self.backend.headers, mock.headers)
