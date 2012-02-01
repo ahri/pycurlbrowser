@@ -23,13 +23,14 @@ class ResponseCollection(object):
     def __init__(self):
         self._responses = []
 
-    def add(self, mock, url, method='GET', data=None, headers=None):
-        """Store a mock response."""
+    def add(self, mock, url, method='GET', data=None, headers=None, auth=None):
+        """Store a mock response"""
         self._responses.append(dict(mock=mock,
                                     url=url,
                                     method=method,
                                     data=data if not self._empty(data) else None,
-                                    headers=headers))
+                                    headers=headers,
+                                    auth=auth))
 
     @staticmethod
     def _to_set(dictionary):
@@ -41,7 +42,7 @@ class ResponseCollection(object):
         """Is a var empty? PHP stylee"""
         return v is None or len(v) == 0
 
-    def get(self, url, method, data, headers):
+    def get(self, url, method, data, headers, auth):
         """
         Get a matching response, where the url, method and headers match exactly
         and the data is matched on a best-case basis.
@@ -52,7 +53,8 @@ class ResponseCollection(object):
         potentials = [r for r in self._responses if \
             r['url'] == url and \
             r['method'] == method and \
-            r['headers'] == headers]
+            r['headers'] == headers and \
+            r['auth'] == auth]
 
         try:
             # ideally we don't have to best-match the data
@@ -93,11 +95,13 @@ class ResponseCollection(object):
                         (dict(url=url,
                               method=method,
                               data=data,
-                              headers=headers),
+                              headers=headers,
+                              auth=auth),
                          [dict(url=r['url'],
                                method=r['method'],
                                data=r['data'],
-                               headers=r['headers'])
+                               headers=r['headers'],
+                               auth=r['auth'])
                           for r in self._responses]))
 
 class MockBackend(HttpBackend):
@@ -113,11 +117,11 @@ class MockBackend(HttpBackend):
         self._resp = None
         self._url = None
 
-    def go(self, url, method, data, headers, follow, agent, retries, debug):
+    def go(self, url, method, data, headers, auth, follow, agent, retries, debug):
         """Visit a URL"""
 
         # pick the best-matching MockResponse
-        self._resp = self.responses.get(url, method, data, headers)
+        self._resp = self.responses.get(url, method, data, headers, auth)
 
         if self._resp.exception is not None:
             raise self._resp.exception

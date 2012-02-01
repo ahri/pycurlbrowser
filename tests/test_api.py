@@ -27,17 +27,22 @@ def derived_types():
 class ApiTests(TestCase):
 
     def test_go(self):
-        comp = inspect.getargspec(HttpBackend.go)
+        """Ensure that 'go' can be called consistently"""
+        comp = set(inspect.getargspec(HttpBackend.go).args)
         for t in derived_types():
-            self.assertEqual(comp, inspect.getargspec(t.go), "Type %(t)s does not adhere to the spec %(s)s" % dict(t=t, s=comp))
+            res = comp - set(inspect.getargspec(t.go).args)
+            self.assertEqual(res, set(), "Function %(c)s.go is missing params: %(p)s" % dict(c=t.__name__, p=", ".join(res)))
 
     def test_properties(self):
+        """Kinda pointless test given that HttpBackend supplies them all anyway..."""
         comp = set(dir(HttpBackend))
         for t in derived_types():
-            self.assertEqual(comp - set(dir(t)), set())
+            res = comp - set(dir(t))
+            self.assertEqual(res, set(), "Class %(c)s is missing properties: %(p)s" % dict(c=t.__name__, p=", ".join(res)))
 
 
     def test_properties_overriden(self):
+        """Check that properties are appropriately overriden"""
         comp = dir(HttpBackend)
         for t in derived_types():
             o = t()
