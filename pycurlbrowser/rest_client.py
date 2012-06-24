@@ -35,7 +35,7 @@ class StatusServerError(Exception):
     """
 
 def status_factory(status):
-    """Create exceptions based on HTTP status codes"""
+    """Post exceptions based on HTTP status codes"""
     if   100 <= status < 200:
         return StatusInformational()
     elif 300 <= status < 400:
@@ -75,29 +75,29 @@ class RestClient(Browser):
 
     # CRUD
 
-    def create(self, obj, data=None, headers=None):
-        """Create (POST)"""
+    def post(self, obj, data=None, headers=None):
+        """Post"""
         self.go(obj, 'POST', data=data, headers=headers)
         return self.src
 
-    def read(self, obj, uid=None, headers=None):
-        """Read (GET)"""
+    def get(self, obj, uid=None, headers=None):
+        """Get"""
         self.go(obj, 'GET', uid=uid, headers=headers)
         return self.src
 
     def head(self, obj, uid=None, headers=None):
-        """Head (HEAD)"""
+        """Head"""
         # TODO: care about headers
         # TODO: think about self._curl.setopt(pycurl.NOBODY, 1)
         self.go(obj, 'HEAD', uid=uid, headers=headers)
 
-    def update(self, obj, uid, data=None, headers=None):
-        """Update (PUT)"""
+    def put(self, obj, uid, data=None, headers=None):
+        """Put"""
         self.go(obj, 'PUT', uid=uid, data=data, headers=headers)
         return self.src
 
-    def destroy(self, obj, uid, headers=None):
-        """Destroy (DELETE)"""
+    def delete(self, obj, uid, headers=None):
+        """Delete"""
         # TODO: care about headers
         self.go(obj, 'DELETE', uid=uid, headers=headers)
         return self.src
@@ -108,27 +108,27 @@ class RestClientJson(RestClient):
     A REST client that only speaks JSON
     """
 
-    def create(self, obj, data=None):
-        """Create (POST)"""
-        res = super(RestClientJson, self).create(obj, json.dumps(data), headers={'Content-Type': 'text/json'})
+    def post(self, obj, data=None):
+        """Post"""
+        res = super(RestClientJson, self).post(obj, json.dumps(data), headers={'Content-Type': 'text/json'})
         if len(res) > 0:
             return json.loads(res)
         return None
 
-    def read(self, obj, uid=None):
-        """Read (GET)"""
-        return json.loads(super(RestClientJson, self).read(obj, uid))
+    def get(self, obj, uid=None):
+        """Get"""
+        return json.loads(super(RestClientJson, self).get(obj, uid))
 
-    def update(self, obj, uid, data=None):
-        """Update (PUT)"""
-        res = super(RestClientJson, self).update(obj, uid, json.dumps(data), headers={'Content-Type': 'text/json'})
+    def put(self, obj, uid, data=None):
+        """Put"""
+        res = super(RestClientJson, self).put(obj, uid, json.dumps(data), headers={'Content-Type': 'text/json'})
         if len(res) > 0:
             return json.loads(res)
         return None
 
-    def destroy(self, obj, uid):
-        """Destroy (DELETE)"""
-        res = super(RestClientJson, self).destroy(obj, uid)
+    def delete(self, obj, uid):
+        """Delete"""
+        res = super(RestClientJson, self).delete(obj, uid)
         if len(res) > 0:
             return json.loads(res)
         return None

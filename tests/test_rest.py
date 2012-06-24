@@ -12,8 +12,8 @@ class TestRest(TestCase):
         self.backend = MockBackend()
         self.client = RestClient('http://mocked', backend=self.backend)
 
-    def test_create(self):
-        """Positive test for CREATE"""
+    def test_post(self):
+        """Positive test for POST"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -26,10 +26,10 @@ class TestRest(TestCase):
         self.backend.responses.add(mock, url, method, data)
 
         # Act, Assert
-        self.assertEqual(self.client.create('object', data), mock.src)
+        self.assertEqual(self.client.post('object', data), mock.src)
 
-    def test_read(self):
-        """Positive test for READ"""
+    def test_get(self):
+        """Positive test for GET"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -42,7 +42,7 @@ class TestRest(TestCase):
         self.backend.responses.add(mock, url, method)
 
         # Act, Assert
-        self.assertEqual(self.client.read('object', uid), mock.src)
+        self.assertEqual(self.client.get('object', uid), mock.src)
 
     def test_head(self):
         """Positive test for HEAD"""
@@ -60,8 +60,8 @@ class TestRest(TestCase):
         # Act, Assert
         self.assertEqual(self.client.head('object', uid), None)
 
-    def test_update(self):
-        """Positive test for UPDATE"""
+    def test_put(self):
+        """Positive test for PUT"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -75,7 +75,7 @@ class TestRest(TestCase):
         self.backend.responses.add(mock, url, method, data)
 
         # Act, Assert
-        self.assertEqual(self.client.update('object', uid, data), mock.src)
+        self.assertEqual(self.client.put('object', uid, data), mock.src)
 
     def test_delete(self):
         """Positive test for DELETE"""
@@ -91,7 +91,7 @@ class TestRest(TestCase):
         self.backend.responses.add(mock, url, method)
 
         # Act, Assert
-        self.assertEqual(self.client.destroy('object', uid), mock.src)
+        self.assertEqual(self.client.delete('object', uid), mock.src)
 
 class TestJsonRest(TestCase):
 
@@ -103,8 +103,8 @@ class TestJsonRest(TestCase):
         self.backend = MockBackend()
         self.client = RestClientJson('http://mocked', backend=self.backend)
 
-    def test_create(self):
-        """Positive test for JSON CREATE"""
+    def test_post(self):
+        """Positive test for JSON POST"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -120,10 +120,10 @@ class TestJsonRest(TestCase):
         self.backend.responses.add(mock, url, method, expected_data, headers)
 
         # Act, Assert
-        self.assertEqual(self.client.create('object', data), expected, {'Content-Type': 'text/json'})
+        self.assertEqual(self.client.post('object', data), expected, {'Content-Type': 'text/json'})
 
-    def test_read(self):
-        """Positive test for JSON READ"""
+    def test_get(self):
+        """Positive test for JSON GET"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -137,7 +137,7 @@ class TestJsonRest(TestCase):
         self.backend.responses.add(mock, url, method)
 
         # Act, Assert
-        self.assertEqual(self.client.read('object', uid), expected)
+        self.assertEqual(self.client.get('object', uid), expected)
 
     def test_head(self):
         """Positive test for JSON HEAD"""
@@ -155,8 +155,8 @@ class TestJsonRest(TestCase):
         # Act, Assert
         self.assertEqual(self.client.head('object', uid), None)
 
-    def test_update(self):
-        """Positive test for JSON UPDATE"""
+    def test_put(self):
+        """Positive test for JSON PUT"""
         # Arrange
         mock = MockResponse()
         mock.http_code = 200
@@ -173,7 +173,7 @@ class TestJsonRest(TestCase):
         self.backend.responses.add(mock, url, method, expected_data, headers)
 
         # Act, Assert
-        self.assertEqual(self.client.update('object', uid, data), expected)
+        self.assertEqual(self.client.put('object', uid, data), expected)
 
     def test_delete(self):
         """Positive test for JSON DELETE"""
@@ -190,4 +190,4 @@ class TestJsonRest(TestCase):
         self.backend.responses.add(mock, url, method)
 
         # Act, Assert
-        self.assertEqual(self.client.destroy('object', uid), expected)
+        self.assertEqual(self.client.delete('object', uid), expected)
