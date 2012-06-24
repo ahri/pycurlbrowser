@@ -8,7 +8,7 @@ Includes canned responses for testing.
 """
 
 from urllib import urlencode
-from .backend import HttpBackend, CurlBackend
+from .backend import HttpBackend, RequestsBackend
 
 def url_for_get(url, data):
     """Encode the given data onto a URL"""
@@ -27,7 +27,7 @@ class Browser(HttpBackend):
     A lazy-loading backend-agnostic minimal web browser.
     """
 
-    def __init__(self, url=None, backend=CurlBackend()):
+    def __init__(self, url=None, backend=RequestsBackend()):
         self._backend = backend
 
         self.retries = 0
