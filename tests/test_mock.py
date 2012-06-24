@@ -22,13 +22,14 @@ class TestBackendApi(TestCase):
         method  = 'GET'
         data    = None
         headers = None
+        auth    = None
         follow  = None
         agent   = None
         retries = None
         debug   = None
 
         self.backend.responses.add(mock, url, method, data, headers)
-        self.backend.go(url, method, data, headers, follow, agent, retries, debug)
+        self.backend.go(url, method, data, headers, auth, follow, agent, retries, debug)
         return url, mock
 
     def test_go(self):

@@ -113,7 +113,7 @@ class MockBackend(HttpBackend):
         self._resp = None
         self._url = None
 
-    def go(self, url, method, data, headers, follow, agent, retries, debug):
+    def go(self, url, method, data, headers, auth, follow, agent, retries, debug):
         """Visit a URL"""
 
         # pick the best-matching MockResponse

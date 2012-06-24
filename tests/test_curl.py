@@ -19,11 +19,12 @@ class TestBackendApi(TestCase):
         method  = 'GET'
         data    = None
         headers = None
+        auth    = None
         follow  = None
         agent   = "foo"
         retries = 1
         debug   = None
-        self.backend.go(url, method, data, headers, follow, agent, retries, debug)
+        self.backend.go(url, method, data, headers, auth, follow, agent, retries, debug)
         return url
 
     def test_go(self):

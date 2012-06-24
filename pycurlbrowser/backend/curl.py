@@ -91,7 +91,7 @@ class CurlBackend(HttpBackend):
         else:
             self._curl.setopt(self._pycurl.VERBOSE, 0)
 
-    def go(self, url, method, data, headers, follow, agent, retries, debug):
+    def go(self, url, method, data, headers, auth, follow, agent, retries, debug):
         """Visit a URL, return an HTTP response code"""
         self._setup_url(url)
         self._setup_method(method)
