@@ -27,9 +27,13 @@ def derived_types():
 class ApiTests(TestCase):
 
     def test_go(self):
-        comp = inspect.getargspec(HttpBackend.go)
+        def just_args(s):
+            return dict(args=s.args, varargs=s.varargs)
+
+        comp = just_args(inspect.getargspec(HttpBackend.go))
         for t in derived_types():
-            self.assertEqual(comp, inspect.getargspec(t.go), "Type %(t)s does not adhere to the spec %(s)s" % dict(t=t, s=comp))
+            sig = just_args(inspect.getargspec(t.go))
+            self.assertEqual(comp, sig, "Type %(t)s does not adhere to the spec %(spec)s with signature %(sig)s" % dict(t=t, spec=comp, sig=sig))
 
     def test_properties(self):
         comp = set(dir(HttpBackend))
