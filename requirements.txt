@@ -1,4 +1,4 @@
-Pygments==1.4
+Pygments==2.7.4
 bpython==0.10.1
 certifi==0.0.8
 chardet==1.0.1
