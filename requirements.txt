@@ -1,6 +1,6 @@
 Pygments==2.7.4
 bpython==0.10.1
-certifi==0.0.8
+certifi==2022.12.7
 chardet==1.0.1
 lxml==4.6.5
 nose==1.1.2
